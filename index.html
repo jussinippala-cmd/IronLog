@@ -72,10 +72,10 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 /* Progress */
 .progress-track{background:#10101a;border-radius:99px;height:5px;margin-bottom:20px;overflow:hidden}
 .progress-fill{background:#e8ff47;height:100%;border-radius:99px;transition:width .4s ease}
-/* Rest bar */
-.rest-bar{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;
-  background:#0a0a18cc;backdrop-filter:blur(10px);z-index:200;padding:16px 20px;
-  display:none;justify-content:space-between;align-items:center;border-bottom:1px solid #1c1c2e}
+/* Rest bar — fixed at bottom above nav */
+.rest-bar{position:fixed;bottom:calc(max(22px,env(safe-area-inset-bottom,22px)) + 54px);left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:398px;
+  background:#0c0c18;backdrop-filter:blur(10px);z-index:200;padding:14px 18px;
+  display:none;justify-content:space-between;align-items:center;border:1px solid #1c1c2e;border-radius:16px;box-shadow:0 -2px 20px #000a}
 .rest-bar.visible{display:flex}
 /* Exercise card header */
 .ex-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
@@ -412,21 +412,41 @@ const BLOCKS=[
 // ═══════════════════════════════════════════════════════════════════
 // STORAGE
 // ═══════════════════════════════════════════════════════════════════
-const SK={weights:"il_weights",history:"il_history",nextDay:"il_nextDay",blockStart:"il_blockStart"};
+const SK={weights:"il_weights",history:"il_history",nextDay:"il_nextDay",blockCompletions:"il_blockCompletions",settings:"il_settings"};
 const ls={
   get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch{return null;}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
 };
+function getSettings(){return Object.assign({restEnabled:true,restSecs:90},ls.get(SK.settings)||{});}
+function saveSettings(s){ls.set(SK.settings,s);}
+// blockCompletions = total number of full-block completions ever.
+function getTotalBlockCompletions(){return ls.get(SK.blockCompletions)||0;}
 function initAndGetBlockIdx(){
-  if(!ls.get(SK.blockStart))ls.set(SK.blockStart,new Date().toISOString());
-  const days=Math.floor((Date.now()-new Date(ls.get(SK.blockStart)).getTime())/86400000);
-  return Math.floor(days/14)%BLOCKS.length;
+  const completions=getTotalBlockCompletions();
+  return Math.floor(completions/2)%BLOCKS.length;
 }
-function getDaysUntilSwap(){
-  const s=ls.get(SK.blockStart);
-  if(!s)return 14;
-  const days=Math.floor((Date.now()-new Date(s).getTime())/86400000);
-  return 14-(days%14);
+// Returns how many exercise sessions remain until the next block swap.
+// A full block = 3 sessions (A+B+C). 2 full blocks = 6 sessions.
+// We track completions in "full-block" units, but sessions within the
+// current block-cycle are tracked via history days done.
+function getSessionsUntilSwap(){
+  const sessionsInCycle=getSessionsInCurrentBlockCycle();
+  return Math.max(0,6-sessionsInCycle);
+}
+// How many sessions have been logged in the current 2-completion cycle (mod 6)?
+function getSessionsInCurrentBlockCycle(){
+  const totalSessions=getHistory().length;
+  return totalSessions%totalSessionsForSwap();
+}
+function totalSessionsForSwap(){return 6;}
+// Called after each workout to check if we've completed a full block
+// and if so, bump the completion counter.
+function maybeAdvanceBlock(){
+  const nxt=getNextDayId(); // already advanced by advanceDay() before this call
+  if(nxt==="A"){
+    const c=getTotalBlockCompletions()+1;
+    ls.set(SK.blockCompletions,c);
+  }
 }
 function getNextDayId(){return ls.get(SK.nextDay)||"A";}
 function getHistory(){return ls.get(SK.history)||[];}
@@ -471,7 +491,8 @@ const A={
   swapTarget:null,
   // Internal timers
   _elapsedInterval:null,
-  _restTimeout:null,
+  _restInterval:null,
+  _restEnd:null,
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -488,20 +509,29 @@ function startElapsed(){
 function stopElapsed(){clearInterval(A._elapsedInterval);A.elapsed=0;}
 
 function startRest(secs){
-  clearTimeout(A._restTimeout);
+  clearTimeout(A._restInterval);
+  A._restEnd=Date.now()+secs*1000;
   A.restTimer=secs;
   tickRest();
 }
 function tickRest(){
-  refreshRestBar();
-  if(A.restTimer>0){
-    A._restTimeout=setTimeout(()=>{A.restTimer--;tickRest();},1000);
+  const remaining=A._restEnd?Math.ceil((A._restEnd-Date.now())/1000):0;
+  if(remaining>0){
+    A.restTimer=remaining;
+    refreshRestBar();
+    A._restInterval=setTimeout(tickRest,500); // poll every 500ms — survives throttling
   }else{
     A.restTimer=null;
+    A._restEnd=null;
     refreshRestBar();
   }
 }
-function skipRest(){clearTimeout(A._restTimeout);A.restTimer=null;refreshRestBar();}
+function skipRest(){
+  clearTimeout(A._restInterval);
+  A.restTimer=null;
+  A._restEnd=null;
+  refreshRestBar();
+}
 function refreshRestBar(){
   const bar=document.getElementById('rest-bar');
   if(!bar)return;
@@ -509,14 +539,17 @@ function refreshRestBar(){
     bar.classList.add('visible');
     const t=bar.querySelector('#rest-time');
     if(t)t.textContent=`REST · ${fmtTime(A.restTimer)}`;
-    const wh=document.getElementById('workout-hdr');
-    if(wh)wh.style.paddingTop='80px';
   }else{
     bar.classList.remove('visible');
-    const wh=document.getElementById('workout-hdr');
-    if(wh)wh.style.paddingTop='48px';
   }
 }
+// When screen wakes up, re-sync the rest timer immediately
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&A._restEnd){
+    clearTimeout(A._restInterval);
+    tickRest();
+  }
+});
 
 // ═══════════════════════════════════════════════════════════════════
 // SESSION LOGIC
@@ -541,7 +574,8 @@ function startWorkout(dayId,block){
   A.sessionStart=Date.now();
   A.elapsed=0;
   A.restTimer=null;
-  clearTimeout(A._restTimeout);
+  A._restEnd=null;
+  clearTimeout(A._restInterval);
   startElapsed();
   navigate("workout");
 }
@@ -582,7 +616,8 @@ function markSetDone(exId,idx){
   const w=parseFloat(sets[idx].weight);
   sets[idx]={...sets[idx],done:true,editing:false};
   if(!isNaN(w)&&w>0)saveWeight(exId,w);
-  startRest(90);
+  const cfg=getSettings();
+  if(cfg.restEnabled)startRest(cfg.restSecs);
   renderSetRow(exId,idx);
   updateProgress();
   updateFinishBtn();
@@ -607,11 +642,18 @@ function saveEdit(exId,idx){
 
 function updateKg(exId,idx,val){
   A.sessionSets[exId][idx]={...A.sessionSets[exId][idx],weight:val};
-  // No full re-render needed — input handles itself
+  // Propagate forward to all subsequent undone sets
+  A.sessionSets[exId].forEach((s,i)=>{
+    if(i>idx&&!s.done){
+      A.sessionSets[exId][i]={...A.sessionSets[exId][i],weight:val};
+      const el=document.getElementById(`kg-inp-${exId}-${i}`);
+      if(el)el.value=val;
+    }
+  });
 }
 
-function finishWorkout(){
-  if(!allDone())return;
+function finishWorkout(force){
+  if(!force&&!allDone())return;
   const block=BLOCKS[A.blockIdx];
   const day=block.days.find(d=>d.id===A.activeDayId);
   const session={
@@ -628,10 +670,11 @@ function finishWorkout(){
   A.history=[...A.history,session];
   ls.set(SK.history,A.history);
   advanceDay(A.activeDayId);
+  maybeAdvanceBlock();
   stopElapsed();
-  clearTimeout(A._restTimeout);
+  clearTimeout(A._restInterval);
   A.restTimer=null;
-  stopElapsed();
+  A._restEnd=null;
   A.blockIdx=initAndGetBlockIdx();
   A.previewBlockIdx=A.blockIdx;
   A.activeDayId=getNextDayId();
@@ -661,7 +704,6 @@ function renderSetRow(exId,idx){
   const ex=A.sessionExercises.find(e=>e.id===exId);
   if(!ex)return;
   container.innerHTML=buildSetRowHTML(ex,idx,A.sessionSets[exId][idx]);
-  bindSetRowEvents(ex,idx);
 }
 
 function updateProgress(){
@@ -678,6 +720,8 @@ function updateFinishBtn(){
   if(allDone()){
     btn.disabled=false;
     btn.textContent='✓ FINISH WORKOUT';
+    const hint=document.getElementById('quitter-area');
+    if(hint)hint.style.display='none';
   }else{
     btn.disabled=true;
     btn.textContent=`${done} / ${total} SETS DONE`;
@@ -850,7 +894,7 @@ function closeSwap(){
 function viewHome(){
   const block=BLOCKS[A.blockIdx];
   const nextB=BLOCKS[(A.blockIdx+1)%BLOCKS.length];
-  const dtu=getDaysUntilSwap();
+  const stu=getSessionsUntilSwap();
   const nextDay=block.days.find(d=>d.id===A.activeDayId);
   const totalS=A.history.length;
   const weekS=A.history.filter(h=>isThisISOWeek(h.date)).length;
@@ -861,9 +905,9 @@ function viewHome(){
     return`<span class="ex-pill"><span style="font-size:12px;color:#f2f0ea">${esc(ex.name)}</span>${lw?`<span style="font-size:12px;font-weight:700;color:${bump?'#e8ff47':'#4a4a6a'}">${bump?'↑':''}${lw}kg</span>`:''}</span>`;
   }).join('');
 
-  const swapAlert=dtu<=4?`
+  const swapAlert=stu<=2?`
     <div class="scard" style="margin-top:4px">
-      <div style="font-size:11px;color:#47ffe8;font-weight:700;letter-spacing:.08em;margin-bottom:3px">🔄 BLOCK SWAP IN ${dtu} DAYS</div>
+      <div style="font-size:11px;color:#47ffe8;font-weight:700;letter-spacing:.08em;margin-bottom:3px">🔄 BLOCK SWAP IN ${stu} SESSION${stu===1?'':'S'}</div>
       <div style="font-size:13px;color:#f2f0ea">Coming up: <strong>${esc(nextB.label)} — ${esc(nextB.theme)}</strong></div>
     </div>`:'';
 
@@ -884,7 +928,7 @@ function viewHome(){
     <div><div class="logo">IRONLOG</div><div class="hdr-sub">${today()}</div></div>
     <div style="text-align:right">
       <div style="font-size:10px;color:#47ffe8;font-weight:700;letter-spacing:.06em">${esc(block.label)}</div>
-      <div style="font-size:10px;color:#4a4a6a;margin-top:1px">Swap in ${dtu}d</div>
+      <div style="font-size:10px;color:#4a4a6a;margin-top:1px">Swap in ${stu} session${stu===1?'':'s'}</div>
     </div>
   </div>
   <div class="page">
@@ -893,7 +937,7 @@ function viewHome(){
     <div class="stats-row">
       <div class="stat-box"><div class="stat-val">${totalS}</div><div class="stat-lbl">Sessions</div></div>
       <div class="stat-box"><div class="stat-val">${weekS}<span>/3</span></div><div class="stat-lbl">This week</div></div>
-      <div class="stat-box"><div class="stat-val">${dtu}<span style="font-size:14px">d</span></div><div class="stat-lbl">Block swap</div></div>
+      <div class="stat-box"><div class="stat-val">${stu}</div><div class="stat-lbl">Swap in</div></div>
     </div>
     <div class="acard">
       <div style="font-size:11px;color:#e8ff47;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">
@@ -935,7 +979,13 @@ function viewWorkout(){
     <button id="finish-btn" class="btn-primary" onclick="finishWorkout()" ${isDone?'':'disabled'}>
       ${isDone?'✓ FINISH WORKOUT':`${done} / ${total} SETS DONE`}
     </button>
-    ${isDone?'':`<div style="text-align:center;font-size:12px;color:#4a4a6a;margin-top:8px">Complete all sets to finish</div>`}
+    ${isDone?'':`
+    <div style="text-align:center;font-size:12px;color:#4a4a6a;margin-top:8px">Complete all sets to finish</div>
+    <div id="quitter-area" style="text-align:center;margin-top:28px">
+      <button onclick="quitterWorkout()" style="background:none;border:none;color:#2a2a3a;font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:4px 8px">
+        Push here if you want to give up without completing all the sets
+      </button>
+    </div>`}
   </div>`;
 }
 
@@ -1019,7 +1069,7 @@ function viewHistory(){
 function viewProgram(){
   const block=BLOCKS[A.blockIdx];
   const nextB=BLOCKS[(A.blockIdx+1)%BLOCKS.length];
-  const dtu=getDaysUntilSwap();
+  const stu=getSessionsUntilSwap();
   const pb=BLOCKS[A.previewBlockIdx];
 
   const tabsHTML=BLOCKS.map((b,i)=>{
@@ -1061,14 +1111,14 @@ function viewProgram(){
     <div class="acard" style="margin-bottom:16px">
       <div style="font-size:12px;font-weight:700;color:#e8ff47;letter-spacing:.1em;margin-bottom:6px">FULL BODY · 3×/WEEK · 6 BLOCKS · 12 WEEKS</div>
       <div style="font-size:13px;color:#4a4a6a;line-height:1.6">
-        12 weeks of unique training before anything repeats. Blocks auto-swap every 14 days.
+        12 weeks of unique training before anything repeats. Blocks swap after 2 full completions (6 sessions).
         Tap ⇄ Swap during any workout to replace an unavailable exercise.
       </div>
     </div>
     <div class="scard" style="margin-bottom:16px;display:flex;align-items:center;gap:14px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:38px;font-weight:900;color:#47ffe8;line-height:1">${dtu}</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:38px;font-weight:900;color:#47ffe8;line-height:1">${stu}</div>
       <div>
-        <div style="font-size:13px;font-weight:700;color:#47ffe8">days until ${esc(nextB.label)}</div>
+        <div style="font-size:13px;font-weight:700;color:#47ffe8">session${stu===1?'':'s'} until ${esc(nextB.label)}</div>
         <div style="font-size:12px;color:#4a4a6a;margin-top:2px">${esc(nextB.theme)}</div>
       </div>
     </div>
@@ -1081,11 +1131,81 @@ function viewProgram(){
   ${navHTML("program")}`;
 }
 
+function viewSettings(){
+  const cfg=getSettings();
+  const presets=[30,45,60,90,120,180];
+  const presetsHTML=presets.map(s=>{
+    const active=cfg.restSecs===s;
+    return`<button onclick="setRestSecs(${s})" style="
+      flex:1;padding:12px 4px;border-radius:12px;font-family:'Barlow Condensed',sans-serif;
+      font-weight:900;font-size:18px;letter-spacing:.02em;border:2px solid ${active?'#e8ff47':'#1c1c2e'};
+      background:${active?'#e8ff4718':'#10101a'};color:${active?'#e8ff47':'#4a4a6a'};
+      cursor:pointer">${s<60?s+'s':Math.floor(s/60)+(s%60?':'+String(s%60).padStart(2,'0'):'')+'m'}</button>`;
+  }).join('');
+
+  return`
+  <div class="hdr"><div class="logo">IRONLOG</div></div>
+  <div class="page">
+    <div class="h2">Settings</div>
+
+    <div class="sec-title">Rest Timer</div>
+    <div class="card" style="margin-bottom:10px">
+      <div class="row" style="margin-bottom:${cfg.restEnabled?'18px':'0'}">
+        <div>
+          <div style="font-weight:700;font-size:15px">Enable rest timer</div>
+          <div style="font-size:12px;color:#4a4a6a;margin-top:2px">Auto-starts after each completed set</div>
+        </div>
+        <button onclick="toggleRest()" style="
+          width:48px;height:28px;border-radius:99px;border:none;cursor:pointer;
+          background:${cfg.restEnabled?'#e8ff47':'#1c1c2e'};
+          position:relative;transition:background .2s">
+          <div style="
+            position:absolute;top:4px;width:20px;height:20px;border-radius:50%;
+            background:${cfg.restEnabled?'#080810':'#4a4a6a'};
+            left:${cfg.restEnabled?'24px':'4px'};transition:left .2s"></div>
+        </button>
+      </div>
+      ${cfg.restEnabled?`
+      <div style="border-top:1px solid #1c1c2e;padding-top:16px">
+        <div style="font-size:12px;color:#4a4a6a;margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700">Duration</div>
+        <div style="display:flex;gap:6px;margin-bottom:14px">${presetsHTML}</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-size:12px;color:#4a4a6a;white-space:nowrap">Custom (sec)</div>
+          <input type="number" value="${cfg.restSecs}" min="10" max="600"
+            oninput="setRestSecs(parseInt(this.value)||90)"
+            style="flex:1;background:#080810;border:1px solid #1c1c2e;border-radius:10px;
+            padding:10px 12px;color:#f2f0ea;font-size:15px;text-align:center">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:#e8ff47;min-width:44px;text-align:right">
+            ${cfg.restSecs<60?cfg.restSecs+'s':Math.floor(cfg.restSecs/60)+(cfg.restSecs%60?':'+String(cfg.restSecs%60).padStart(2,'0'):'')+'m'}
+          </div>
+        </div>
+      </div>`:''}
+    </div>
+
+  </div>
+  ${navHTML("settings")}`;
+}
+
+function toggleRest(){
+  const cfg=getSettings();
+  cfg.restEnabled=!cfg.restEnabled;
+  saveSettings(cfg);
+  render();
+}
+function setRestSecs(v){
+  if(!v||v<10||v>600)return;
+  const cfg=getSettings();
+  cfg.restSecs=v;
+  saveSettings(cfg);
+  render();
+}
+
 function navHTML(active){
   const items=[
     {id:"home",icon:"🏠",label:"Home"},
     {id:"history",icon:"📋",label:"Log"},
     {id:"program",icon:"📅",label:"Program"},
+    {id:"settings",icon:"⚙️",label:"Settings"},
   ];
   return`<nav class="nav">${items.map(it=>`
     <button class="nav-btn${active===it.id?' active':''}" onclick="navigate('${it.id}')">
@@ -1107,11 +1227,17 @@ function setPreviewBlock(idx){
   render();
 }
 
+function quitterWorkout(){
+  if(!confirm("Are you sure you want to be a pussy ass quitter?"))return;
+  finishWorkout(true);
+}
+
 function cancelWorkout(){
   if(!confirm("Cancel? Progress will be lost."))return;
   stopElapsed();
-  clearTimeout(A._restTimeout);
+  clearTimeout(A._restInterval);
   A.restTimer=null;
+  A._restEnd=null;
   A.sessionStart=null;
   navigate("home");
 }
@@ -1125,20 +1251,10 @@ function render(){
   else if(A.view==='complete')html=viewComplete();
   else if(A.view==='history')html=viewHistory();
   else if(A.view==='program')html=viewProgram();
+  else if(A.view==='settings')html=viewSettings();
   app.innerHTML=html;
-  // After render, bind kg inputs (oninput in HTML attr can't pass complex args)
+  // Re-attach rest bar state after workout render
   if(A.view==='workout'){
-    A.sessionExercises.forEach(ex=>{
-      (A.sessionSets[ex.id]||[]).forEach((_,idx)=>{
-        const el=document.getElementById(`kg-inp-${ex.id}-${idx}`);
-        if(el){
-          const exId=ex.id;
-          const i=idx;
-          el.oninput=function(){updateKg(exId,i,this.value);};
-        }
-      });
-    });
-    // Re-attach rest bar state
     refreshRestBar();
   }
 }
