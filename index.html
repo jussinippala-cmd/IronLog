@@ -970,7 +970,9 @@ function viewWorkout(){
       <div class="logo">IRONLOG</div>
       <div id="elapsed-txt" class="hdr-sub">${BLOCKS[A.blockIdx].label} · Day ${A.activeDayId} · ${fmtTime(A.elapsed)}</div>
     </div>
-    <button class="btn-back" onclick="cancelWorkout()">✕</button>
+    <button class="btn-back" onclick="cancelWorkout()" style="
+      width:40px;height:40px;border-radius:12px;background:#1c1c2e;border:1px solid #2a2a40;
+      font-size:18px;display:flex;align-items:center;justify-content:center;color:#f2f0ea">✕</button>
   </div>
   <div class="page">
     <div class="progress-track"><div id="progress-fill" class="progress-fill" style="width:${pct}%"></div></div>
@@ -1182,8 +1184,96 @@ function viewSettings(){
       </div>`:''}
     </div>
 
+    <div class="sec-title" style="margin-top:24px">How to use</div>
+    <button onclick="openGuide()" class="card" style="width:100%;text-align:left;border:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div>
+        <div style="font-weight:700;font-size:15px">App guide</div>
+        <div style="font-size:12px;color:#4a4a6a;margin-top:2px">How workouts, blocks, swaps and more work</div>
+      </div>
+      <div style="color:#e8ff47;font-size:20px;margin-left:12px">›</div>
+    </button>
+
   </div>
-  ${navHTML("settings")}`;
+  ${navHTML("settings")}
+
+  <div id="guide-modal" style="display:none;position:fixed;inset:0;z-index:500;background:#080810;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div style="max-width:430px;margin:0 auto;padding:0 0 40px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:52px 20px 20px;position:sticky;top:0;background:#080810;border-bottom:1px solid #1c1c2e;z-index:10">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900">How to use</div>
+        <button onclick="closeGuide()" style="width:40px;height:40px;border-radius:12px;background:#1c1c2e;border:1px solid #2a2a40;font-size:18px;color:#f2f0ea;cursor:pointer">✕</button>
+      </div>
+      <div style="padding:20px">
+
+        <div class="sec-title">Logging a workout</div>
+        <div class="card" style="margin-bottom:16px">
+          ${[
+            ['1','Set your reps','Tap the reps button to cycle through the rep range, from top down. The target range is shown as a placeholder.'],
+            ['2','Enter weight','Type kg into the first set — all remaining sets fill automatically. Changing any set cascades forward to undone sets.'],
+            ['3','Mark set done','Tap ✓ to lock in the set. The rest timer starts and the progress bar updates.'],
+            ['4','Edit a done set','Double-tap the 💪🏻 emoji on a completed set to reopen it and change reps or weight.'],
+            ['5','Finish','When all sets are done, FINISH WORKOUT lights up. To end early, use the quit link at the bottom — your partial session is still saved.'],
+          ].map(([n,title,desc])=>`
+          <div style="display:flex;gap:14px;padding:10px 0;border-top:1px solid #1c1c2e;align-items:flex-start">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:#e8ff47;line-height:1;flex-shrink:0;width:22px">${n}</div>
+            <div>
+              <div style="font-weight:700;font-size:13px;margin-bottom:2px">${title}</div>
+              <div style="font-size:12px;color:#4a4a6a;line-height:1.5">${desc}</div>
+            </div>
+          </div>`).join('')}
+        </div>
+
+        <div class="sec-title">Training blocks</div>
+        <div class="card" style="margin-bottom:16px">
+          <div style="font-size:13px;color:#4a4a6a;line-height:1.6;margin-bottom:10px">
+            There are <span style="color:#f2f0ea;font-weight:700">6 blocks</span>, each with a different training style. The block advances after <span style="color:#e8ff47;font-weight:700">2 full passes</span> through Days A, B and C — 6 sessions total. The Home screen shows how many sessions remain until the next swap.
+          </div>
+          ${[
+            ['Block 1','Barbell Compounds'],
+            ['Block 2','Dumbbell & Machine'],
+            ['Block 3','Power & Strength'],
+            ['Block 4','Isolation & Volume'],
+            ['Block 5','Cable & Unilateral'],
+            ['Block 6','Peak'],
+          ].map(([b,t])=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid #1c1c2e">
+            <div style="font-size:13px;color:#4a4a6a">${b}</div>
+            <div style="font-size:13px;font-weight:600;color:#f2f0ea">${t}</div>
+          </div>`).join('')}
+        </div>
+
+        <div class="sec-title">Swapping exercises</div>
+        <div class="card" style="margin-bottom:16px">
+          <div style="font-size:13px;color:#4a4a6a;line-height:1.6">
+            Don't have the equipment? Tap <span style="color:#e8ff47;font-weight:700">⇄ Swap</span> on any uncompleted exercise to open a list of alternatives for the same muscle group. Only the current session is affected — the program block stays unchanged.
+          </div>
+        </div>
+
+        <div class="sec-title">Progressive overload</div>
+        <div class="card" style="margin-bottom:16px">
+          <div style="font-size:13px;color:#4a4a6a;line-height:1.6">
+            If you hit the top of the rep range on every set last session, the app shows a <span style="color:#e8ff47;font-weight:700">↑ LOAD</span> badge and pre-fills a 2.5% heavier weight. Hit it consistently to keep progressing.
+          </div>
+        </div>
+
+        <div class="sec-title">Your data</div>
+        <div class="card" style="margin-bottom:16px">
+          <div style="font-size:13px;color:#4a4a6a;line-height:1.6">
+            Everything is saved locally on your device. Weights, history, settings and block progress all persist between visits. Clearing your browser data will reset the app.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>`;
+}
+
+function openGuide(){
+  const m=document.getElementById('guide-modal');
+  if(m){m.style.display='block';m.scrollTop=0;}
+}
+function closeGuide(){
+  const m=document.getElementById('guide-modal');
+  if(m)m.style.display='none';
 }
 
 function toggleRest(){
