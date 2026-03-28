@@ -2,7 +2,7 @@
   "name": "Rautaloki",
   "short_name": "Rautaloki",
   "description": "Your gym. Your rules.",
-  "start_url": "/rautaloki.html",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#080810",
   "theme_color": "#080810",
