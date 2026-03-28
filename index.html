@@ -72,10 +72,10 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 /* Progress */
 .progress-track{background:#10101a;border-radius:99px;height:5px;margin-bottom:20px;overflow:hidden}
 .progress-fill{background:#e8ff47;height:100%;border-radius:99px;transition:width .4s ease}
-/* Rest bar — fixed at bottom above nav */
-.rest-bar{position:fixed;bottom:calc(max(22px,env(safe-area-inset-bottom,22px)) + 54px);left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:398px;
-  background:#0c0c18;backdrop-filter:blur(10px);z-index:200;padding:14px 18px;
-  display:none;justify-content:space-between;align-items:center;border:1px solid #1c1c2e;border-radius:16px;box-shadow:0 -2px 20px #000a}
+/* Rest bar */
+.rest-bar{position:fixed;bottom:calc(52px + max(22px,env(safe-area-inset-bottom,22px)));left:50%;transform:translateX(-50%);width:100%;max-width:430px;
+  background:#0a0a18ee;backdrop-filter:blur(10px);z-index:200;padding:14px 20px;
+  display:none;justify-content:space-between;align-items:center;border-top:1px solid #1c1c2e}
 .rest-bar.visible{display:flex}
 /* Exercise card header */
 .ex-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
@@ -139,6 +139,27 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 .ex-pill{background:#0a0a18;border-radius:8px;padding:5px 10px;
   display:inline-flex;align-items:center;gap:6px;margin:3px;font-size:12px}
 .hint-text{font-size:10px;color:#4a4a6a;text-align:right;margin-bottom:8px;letter-spacing:.03em}
+/* Onboarding */
+.ob-page{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center}
+.ob-title{font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:900;color:#e8ff47;margin-bottom:4px;line-height:1}
+.ob-sub{font-size:14px;color:#4a4a6a;margin-bottom:36px;line-height:1.5}
+.ob-section{width:100%;max-width:360px;margin-bottom:28px;text-align:left}
+.ob-label{font-size:11px;color:#4a4a6a;text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px}
+.ob-options{display:flex;gap:8px;flex-wrap:wrap}
+.ob-opt{flex:1;min-width:0;background:#10101a;border:2px solid #1c1c2e;border-radius:14px;padding:14px 8px;
+  text-align:center;cursor:pointer;transition:all .15s ease;font-size:14px;font-weight:600;color:#4a4a6a}
+.ob-opt:hover{border-color:#4a4a6a}
+.ob-opt.selected{border-color:#e8ff47;color:#e8ff47;background:#1c1c10}
+.ob-opt .ob-opt-big{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;line-height:1;margin-bottom:2px}
+.ob-opt .ob-opt-sm{font-size:10px;color:#4a4a6a;margin-top:2px}
+.ob-opt.selected .ob-opt-sm{color:#e8ff47aa}
+.ob-sex{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ob-sex .ob-opt{padding:18px 12px}
+.ob-sex .ob-opt .ob-emoji{font-size:28px;margin-bottom:4px}
+.ob-start{margin-top:12px;width:100%;max-width:360px}
+.ob-profile-row{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:8px}
+.ob-profile-tag{background:#1c1c30;border-radius:8px;padding:4px 12px;font-size:12px;color:#4a4a6a;cursor:pointer}
+.ob-profile-tag:hover{color:#e8ff47;border-color:#e8ff47}
 </style>
 </head>
 <body>
@@ -232,482 +253,1089 @@ const LIBRARY={
   ],
 };
 
-const BLOCKS=[
-  {id:1,label:"Block 1",theme:"Barbell Compounds",days:[
-    {id:"A",label:"Full Body A",focus:"Squat · Push · Pull",emoji:"💪",exercises:[
-      {id:"b1_squat",name:"Squat",muscle:"Quads",sets:4,repRange:[6,10],cues:"Full depth, knees track toes, brace hard"},
-      {id:"b1_bench",name:"Bench Press",muscle:"Chest",sets:4,repRange:[8,12],cues:"1s pause at chest, drive through heels"},
-      {id:"b1_cable_row",name:"Cable Row",muscle:"Back",sets:4,repRange:[8,12],cues:"Pull to lower chest, squeeze shoulder blades"},
-      {id:"b1_incline_db",name:"Incline DB Press",muscle:"Chest",sets:3,repRange:[10,15],cues:"Elbows 45°, feel upper chest stretch"},
-      {id:"b1_lat_pull",name:"Lat Pulldown",muscle:"Back",sets:3,repRange:[10,15],cues:"Lean slightly back, pull to upper chest"},
-      {id:"b1_lat_raise",name:"Lateral Raise",muscle:"Shoulders",sets:3,repRange:[15,20],cues:"Lead with elbows, slight forward lean"},
-      {id:"b1_bb_curl",name:"Barbell Curl",muscle:"Biceps",sets:3,repRange:[10,15],cues:"No swinging, full ROM, squeeze at top"},
-    ]},
-    {id:"B",label:"Full Body B",focus:"Hinge · Vertical Push/Pull · Triceps",emoji:"⚡",exercises:[
-      {id:"b1_deadlift",name:"Deadlift",muscle:"Hamstrings",sets:4,repRange:[5,8],cues:"Lats tight, drive floor away"},
-      {id:"b1_ohp",name:"Overhead Press",muscle:"Shoulders",sets:4,repRange:[6,10],cues:"Straight bar path, brace core, full lockout"},
-      {id:"b1_db_row",name:"DB Row",muscle:"Back",sets:4,repRange:[8,12],cues:"Elbow close to body, full stretch at bottom"},
-      {id:"b1_leg_press",name:"Leg Press",muscle:"Quads",sets:3,repRange:[10,15],cues:"Shoulder-width feet, don't lock out"},
-      {id:"b1_cable_fly",name:"Cable Fly",muscle:"Chest",sets:3,repRange:[12,15],cues:"Slight elbow bend, squeeze at center"},
-      {id:"b1_face_pull",name:"Face Pull",muscle:"Shoulders",sets:3,repRange:[15,20],cues:"Pull to forehead, external rotate at end"},
-      {id:"b1_skull",name:"Skullcrusher",muscle:"Triceps",sets:3,repRange:[10,15],cues:"Upper arms vertical, full extension"},
-    ]},
-    {id:"C",label:"Full Body C",focus:"Unilateral Legs · Arms · Glutes",emoji:"🔱",exercises:[
-      {id:"b1_split",name:"Bulgarian Split Squat",muscle:"Quads",sets:3,repRange:[8,12],cues:"Front foot forward, torso upright"},
-      {id:"b1_rdl",name:"Romanian Deadlift",muscle:"Hamstrings",sets:3,repRange:[8,12],cues:"Push hips back, feel hamstring stretch"},
-      {id:"b1_leg_curl",name:"Lying Leg Curl",muscle:"Hamstrings",sets:3,repRange:[10,15],cues:"Full ROM, slow 3s eccentric"},
-      {id:"b1_leg_ext",name:"Leg Extension",muscle:"Quads",sets:3,repRange:[12,15],cues:"Full range, hard squeeze at top"},
-      {id:"b1_hammer",name:"Hammer Curl",muscle:"Biceps",sets:3,repRange:[10,15],cues:"Neutral grip, no swinging"},
-      {id:"b1_hip_thrust",name:"Hip Thrust",muscle:"Glutes",sets:3,repRange:[10,15],cues:"Drive through heels, squeeze at top"},
-      {id:"b1_calf",name:"Standing Calf Raise",muscle:"Calves",sets:4,repRange:[12,15],cues:"Full stretch at bottom, 1s pause at top"},
-    ]},
-  ]},
-  {id:2,label:"Block 2",theme:"Dumbbell & Machine",days:[
-    {id:"A",label:"Full Body A",focus:"Squat · Push · Pull",emoji:"💪",exercises:[
-      {id:"b2_hack",name:"Hack Squat",muscle:"Quads",sets:4,repRange:[8,12],cues:"Feet high on platform, full depth"},
-      {id:"b2_db_bench",name:"DB Bench Press",muscle:"Chest",sets:4,repRange:[8,12],cues:"Greater ROM than barbell, stretch at bottom"},
-      {id:"b2_chest_row",name:"Chest-Supported Row",muscle:"Back",sets:4,repRange:[8,12],cues:"Chest on pad, pull elbows back hard"},
-      {id:"b2_pec_deck",name:"Pec Deck",muscle:"Chest",sets:3,repRange:[12,15],cues:"Control the opening, squeeze at center"},
-      {id:"b2_pullover",name:"Cable Straight-Arm Pullover",muscle:"Back",sets:3,repRange:[12,15],cues:"Slight elbow bend, feel lats stretch at top"},
-      {id:"b2_cable_raise",name:"Cable Lateral Raise",muscle:"Shoulders",sets:3,repRange:[15,20],cues:"Unilateral, elbow leads, don't shrug"},
-      {id:"b2_incline_curl",name:"Incline DB Curl",muscle:"Biceps",sets:3,repRange:[10,15],cues:"Arms behind torso for extra stretch"},
-    ]},
-    {id:"B",label:"Full Body B",focus:"Hinge · Vertical Push/Pull · Triceps",emoji:"⚡",exercises:[
-      {id:"b2_trap_dl",name:"Trap Bar Deadlift",muscle:"Hamstrings",sets:4,repRange:[6,10],cues:"Hips down to start, chest tall, drive up"},
-      {id:"b2_db_ohp",name:"DB Shoulder Press",muscle:"Shoulders",sets:4,repRange:[8,12],cues:"Neutral grip, full lockout"},
-      {id:"b2_sa_row",name:"Single-Arm Cable Row",muscle:"Back",sets:4,repRange:[8,12],cues:"Full rotation, stretch then row to hip"},
-      {id:"b2_leg_press_n",name:"Leg Press (narrow)",muscle:"Quads",sets:3,repRange:[10,15],cues:"Narrow feet, emphasises outer quad"},
-      {id:"b2_db_pullover",name:"DB Pullover",muscle:"Chest",sets:3,repRange:[12,15],cues:"Feel rib cage expand, lats and chest stretch"},
-      {id:"b2_rear_delt",name:"Rear Delt Fly",muscle:"Shoulders",sets:3,repRange:[15,20],cues:"Lead with elbows, avoid traps"},
-      {id:"b2_pushdown",name:"Cable Pushdown",muscle:"Triceps",sets:3,repRange:[12,15],cues:"Elbows locked at sides, full extension"},
-    ]},
-    {id:"C",label:"Full Body C",focus:"Unilateral Legs · Arms · Glutes",emoji:"🔱",exercises:[
-      {id:"b2_lunge",name:"Walking Lunge",muscle:"Quads",sets:3,repRange:[10,14],cues:"Long stride, knee tracks over toes"},
-      {id:"b2_nordic",name:"Nordic Curl",muscle:"Hamstrings",sets:3,repRange:[6,10],cues:"Slow eccentric, brace core"},
-      {id:"b2_seated_curl",name:"Seated Leg Curl",muscle:"Hamstrings",sets:3,repRange:[10,15],cues:"Full stretch, pause at peak contraction"},
-      {id:"b2_leg_ext2",name:"Leg Extension (1.5 rep)",muscle:"Quads",sets:3,repRange:[10,15],cues:"Full rep + half rep = 1. Feel the burn"},
-      {id:"b2_spider",name:"Spider Curl",muscle:"Biceps",sets:3,repRange:[10,15],cues:"Chest on incline, elbows forward, full ROM"},
-      {id:"b2_glute_bridge",name:"Barbell Glute Bridge",muscle:"Glutes",sets:3,repRange:[12,15],cues:"Feet flat, drive hips to ceiling"},
-      {id:"b2_seated_calf",name:"Seated Calf Raise",muscle:"Calves",sets:4,repRange:[12,15],cues:"Loaded stretch at bottom, pause at top"},
-    ]},
-  ]},
-  {id:3,label:"Block 3",theme:"Power & Strength Bias",days:[
-    {id:"A",label:"Full Body A",focus:"Squat · Push · Pull",emoji:"💪",exercises:[
-      {id:"b3_squat",name:"Squat",muscle:"Quads",sets:5,repRange:[4,6],cues:"Heavier — controlled eccentric, explosive concentric"},
-      {id:"b3_bench",name:"Bench Press",muscle:"Chest",sets:5,repRange:[4,6],cues:"Leg drive, tight arch, squeeze bar apart"},
-      {id:"b3_bb_row",name:"Barbell Row",muscle:"Back",sets:4,repRange:[6,8],cues:"Hinge 45°, pull bar to belly button"},
-      {id:"b3_dips",name:"Weighted Dips",muscle:"Chest",sets:3,repRange:[6,10],cues:"Lean forward for chest, elbows slightly flared"},
-      {id:"b3_pullup",name:"Weighted Pull-Up",muscle:"Back",sets:3,repRange:[4,8],cues:"Dead hang start, chin over bar"},
-      {id:"b3_lat_raise",name:"Lateral Raise",muscle:"Shoulders",sets:3,repRange:[12,15],cues:"Strict form, no swinging"},
-      {id:"b3_curl_cable",name:"Cable Curl",muscle:"Biceps",sets:3,repRange:[10,12],cues:"Constant tension, squeeze at top"},
-    ]},
-    {id:"B",label:"Full Body B",focus:"Hinge · Vertical Push/Pull · Triceps",emoji:"⚡",exercises:[
-      {id:"b3_deadlift",name:"Deadlift",muscle:"Hamstrings",sets:5,repRange:[3,5],cues:"Heavy and explosive — maintain form throughout"},
-      {id:"b3_ohp",name:"Overhead Press",muscle:"Shoulders",sets:5,repRange:[4,6],cues:"Drive bar in a straight line, leg drive allowed"},
-      {id:"b3_tbar_row",name:"T-Bar Row",muscle:"Back",sets:4,repRange:[6,8],cues:"Neutral grip, chest tall, squeeze hard"},
-      {id:"b3_leg_press",name:"Leg Press",muscle:"Quads",sets:3,repRange:[8,12],cues:"Load heavier, controlled descent"},
-      {id:"b3_incline_db",name:"Incline DB Press",muscle:"Chest",sets:3,repRange:[8,10],cues:"Full stretch, press explosively"},
-      {id:"b3_face_pull",name:"Face Pull",muscle:"Shoulders",sets:3,repRange:[15,20],cues:"Shoulder health — don't skip this"},
-      {id:"b3_close_bench",name:"Close-Grip Bench",muscle:"Triceps",sets:3,repRange:[6,10],cues:"Shoulder-width grip, elbows tucked"},
-    ]},
-    {id:"C",label:"Full Body C",focus:"Unilateral Legs · Arms · Glutes",emoji:"🔱",exercises:[
-      {id:"b3_split",name:"Bulgarian Split Squat",muscle:"Quads",sets:4,repRange:[6,10],cues:"Add weight — this is your single-leg squat"},
-      {id:"b3_sumo",name:"Sumo Deadlift",muscle:"Hamstrings",sets:4,repRange:[5,8],cues:"Wide stance, toes out, drive knees out"},
-      {id:"b3_leg_curl",name:"Lying Leg Curl",muscle:"Hamstrings",sets:3,repRange:[10,12],cues:"Full ROM, slow eccentric"},
-      {id:"b3_step_up",name:"Step-Up",muscle:"Quads",sets:3,repRange:[8,12],cues:"Drive through heel of front foot"},
-      {id:"b3_hammer",name:"Hammer Curl",muscle:"Biceps",sets:3,repRange:[8,12],cues:"Heavier than usual, strict form"},
-      {id:"b3_hip_thrust",name:"Hip Thrust",muscle:"Glutes",sets:4,repRange:[8,12],cues:"Load heavier, pause 1s at top"},
-      {id:"b3_calf",name:"Standing Calf Raise",muscle:"Calves",sets:4,repRange:[10,12],cues:"Full stretch, heavy load"},
-    ]},
-  ]},
-  {id:4,label:"Block 4",theme:"Isolation & Volume",days:[
-    {id:"A",label:"Full Body A",focus:"Squat · Push · Pull",emoji:"💪",exercises:[
-      {id:"b4_goblet",name:"Goblet Squat",muscle:"Quads",sets:4,repRange:[12,15],cues:"Elbows inside knees, chest tall"},
-      {id:"b4_db_bench",name:"DB Bench Press",muscle:"Chest",sets:4,repRange:[10,15],cues:"Feel the stretch at bottom, squeeze at top"},
-      {id:"b4_cable_row",name:"Cable Row",muscle:"Back",sets:4,repRange:[10,15],cues:"Full stretch, hard squeeze — feel the lat"},
-      {id:"b4_low_fly",name:"Low-to-High Cable Fly",muscle:"Chest",sets:3,repRange:[12,15],cues:"Pull in upward arc, squeeze upper chest"},
-      {id:"b4_lat_pull",name:"Lat Pulldown",muscle:"Back",sets:3,repRange:[12,15],cues:"Straight arms first, then bend elbow"},
-      {id:"b4_arnold",name:"Arnold Press",muscle:"Shoulders",sets:3,repRange:[10,12],cues:"Rotate palm out as you press — full ROM"},
-      {id:"b4_conc_curl",name:"Concentration Curl",muscle:"Biceps",sets:3,repRange:[12,15],cues:"Elbow on inner thigh, strict form"},
-    ]},
-    {id:"B",label:"Full Body B",focus:"Hinge · Vertical Push/Pull · Triceps",emoji:"⚡",exercises:[
-      {id:"b4_rdl",name:"Romanian Deadlift",muscle:"Hamstrings",sets:4,repRange:[10,15],cues:"Feel every rep — slow, controlled, deep stretch"},
-      {id:"b4_db_ohp",name:"DB Shoulder Press",muscle:"Shoulders",sets:4,repRange:[10,15],cues:"Full ROM, feel the squeeze at top"},
-      {id:"b4_db_row",name:"DB Row",muscle:"Back",sets:4,repRange:[10,15],cues:"Elbow close, full range, pause at top"},
-      {id:"b4_leg_press",name:"Leg Press",muscle:"Quads",sets:3,repRange:[15,20],cues:"Higher reps — feel the pump"},
-      {id:"b4_pec_deck",name:"Pec Deck",muscle:"Chest",sets:3,repRange:[15,20],cues:"Control the stretch, hard squeeze"},
-      {id:"b4_cable_raise",name:"Cable Lateral Raise",muscle:"Shoulders",sets:4,repRange:[15,20],cues:"Unilateral, elbow leads"},
-      {id:"b4_overhead_tri",name:"Overhead Tricep Extension",muscle:"Triceps",sets:3,repRange:[12,15],cues:"Elbows forward, full stretch at bottom"},
-    ]},
-    {id:"C",label:"Full Body C",focus:"Unilateral Legs · Arms · Glutes",emoji:"🔱",exercises:[
-      {id:"b4_lunge",name:"Walking Lunge",muscle:"Quads",sets:3,repRange:[12,16],cues:"Higher reps, bodyweight or light DBs"},
-      {id:"b4_good_morn",name:"Good Morning",muscle:"Hamstrings",sets:3,repRange:[10,12],cues:"Soft knees, hinge at hips, feel hamstrings"},
-      {id:"b4_seated_curl",name:"Seated Leg Curl",muscle:"Hamstrings",sets:4,repRange:[12,15],cues:"Full stretch, 2s hold at contraction"},
-      {id:"b4_leg_ext",name:"Leg Extension",muscle:"Quads",sets:4,repRange:[15,20],cues:"Higher reps, feel the quad burn"},
-      {id:"b4_reverse_curl",name:"Reverse Curl",muscle:"Biceps",sets:3,repRange:[12,15],cues:"Overhand grip, targets brachialis"},
-      {id:"b4_abduction",name:"Hip Abduction Machine",muscle:"Glutes",sets:3,repRange:[15,20],cues:"Full ROM, don't use momentum"},
-      {id:"b4_seated_calf",name:"Seated Calf Raise",muscle:"Calves",sets:4,repRange:[15,20],cues:"Loaded stretch at bottom, hold at top"},
-    ]},
-  ]},
-  {id:5,label:"Block 5",theme:"Cable & Unilateral",days:[
-    {id:"A",label:"Full Body A",focus:"Squat · Push · Pull",emoji:"💪",exercises:[
-      {id:"b5_split",name:"Bulgarian Split Squat",muscle:"Quads",sets:4,repRange:[8,12],cues:"Front foot forward, focus on feeling the quad"},
-      {id:"b5_cable_fly",name:"Cable Fly",muscle:"Chest",sets:4,repRange:[12,15],cues:"Constant tension throughout — no lockout"},
-      {id:"b5_sa_row",name:"Single-Arm Cable Row",muscle:"Back",sets:4,repRange:[8,12],cues:"Full rotation, stretch then row to hip"},
-      {id:"b5_low_fly",name:"Low-to-High Cable Fly",muscle:"Chest",sets:3,repRange:[12,15],cues:"Pull in upward arc, squeeze upper chest"},
-      {id:"b5_pullover",name:"Cable Straight-Arm Pullover",muscle:"Back",sets:3,repRange:[12,15],cues:"Constant tension, feel lats throughout"},
-      {id:"b5_cable_raise",name:"Cable Lateral Raise",muscle:"Shoulders",sets:4,repRange:[15,20],cues:"Behind-back cable for better feel"},
-      {id:"b5_cable_curl",name:"Cable Curl",muscle:"Biceps",sets:3,repRange:[12,15],cues:"Constant tension, squeeze at top"},
-    ]},
-    {id:"B",label:"Full Body B",focus:"Hinge · Vertical Push/Pull · Triceps",emoji:"⚡",exercises:[
-      {id:"b5_rdl",name:"Romanian Deadlift",muscle:"Hamstrings",sets:4,repRange:[8,12],cues:"Feel the stretch — this is a hamstring exercise"},
-      {id:"b5_db_ohp",name:"DB Shoulder Press",muscle:"Shoulders",sets:4,repRange:[8,12],cues:"Unilateral option to fix imbalances"},
-      {id:"b5_tbar_row",name:"T-Bar Row",muscle:"Back",sets:4,repRange:[8,12],cues:"Neutral grip, chest tall, squeeze hard"},
-      {id:"b5_leg_press",name:"Leg Press",muscle:"Quads",sets:3,repRange:[10,15],cues:"Single-leg variation if comfortable"},
-      {id:"b5_db_pullover",name:"DB Pullover",muscle:"Chest",sets:3,repRange:[12,15],cues:"Expand rib cage, feel the stretch"},
-      {id:"b5_face_pull",name:"Face Pull",muscle:"Shoulders",sets:3,repRange:[15,20],cues:"Shoulder health staple — don't skip"},
-      {id:"b5_pushdown",name:"Cable Pushdown",muscle:"Triceps",sets:3,repRange:[12,15],cues:"Rope attachment — spread at bottom"},
-    ]},
-    {id:"C",label:"Full Body C",focus:"Unilateral Legs · Arms · Glutes",emoji:"🔱",exercises:[
-      {id:"b5_step_up",name:"Step-Up",muscle:"Quads",sets:3,repRange:[10,12],cues:"Drive through heel of front foot"},
-      {id:"b5_good_morn",name:"Good Morning",muscle:"Hamstrings",sets:3,repRange:[10,12],cues:"Soft knees, hinge at hips"},
-      {id:"b5_leg_curl",name:"Lying Leg Curl",muscle:"Hamstrings",sets:3,repRange:[10,15],cues:"Full ROM, slow 3s eccentric"},
-      {id:"b5_leg_ext",name:"Leg Extension",muscle:"Quads",sets:3,repRange:[12,15],cues:"Full range, hard squeeze at top"},
-      {id:"b5_spider",name:"Spider Curl",muscle:"Biceps",sets:3,repRange:[10,15],cues:"Chest on incline, elbows forward, full ROM"},
-      {id:"b5_cable_kick",name:"Cable Kickback",muscle:"Glutes",sets:3,repRange:[12,15],cues:"Squeeze glute at top, control down"},
-      {id:"b5_lp_calf",name:"Leg Press Calf Raise",muscle:"Calves",sets:3,repRange:[15,20],cues:"Toes on edge, full ROM"},
-    ]},
-  ]},
-  {id:6,label:"Block 6",theme:"Hybrid Strength–Hypertrophy",days:[
-    {id:"A",label:"Full Body A",focus:"Squat · Push · Pull",emoji:"💪",exercises:[
-      {id:"b6_squat",name:"Squat",muscle:"Quads",sets:4,repRange:[6,10],cues:"Work up to a top set of 6, then back off"},
-      {id:"b6_incline_db",name:"Incline DB Press",muscle:"Chest",sets:4,repRange:[8,12],cues:"Better upper chest activation than flat"},
-      {id:"b6_bb_row",name:"Barbell Row",muscle:"Back",sets:4,repRange:[6,10],cues:"Hinge, pull to belly, control the drop"},
-      {id:"b6_pec_deck",name:"Pec Deck",muscle:"Chest",sets:3,repRange:[12,15],cues:"After the heavy press — pump and feel"},
-      {id:"b6_pullup",name:"Pull-Up",muscle:"Back",sets:3,repRange:[6,12],cues:"Add weight if bodyweight is easy"},
-      {id:"b6_arnold",name:"Arnold Press",muscle:"Shoulders",sets:3,repRange:[10,12],cues:"Full rotation, feel shoulders from all angles"},
-      {id:"b6_hammer",name:"Hammer Curl",muscle:"Biceps",sets:3,repRange:[10,15],cues:"Brachialis hit — neutral grip, strict form"},
-    ]},
-    {id:"B",label:"Full Body B",focus:"Hinge · Vertical Push/Pull · Triceps",emoji:"⚡",exercises:[
-      {id:"b6_deadlift",name:"Deadlift",muscle:"Hamstrings",sets:4,repRange:[4,6],cues:"Top set of 4, then 2 back-off sets of 6"},
-      {id:"b6_ohp",name:"Overhead Press",muscle:"Shoulders",sets:4,repRange:[6,10],cues:"Strict form — strength building phase"},
-      {id:"b6_chest_row",name:"Chest-Supported Row",muscle:"Back",sets:4,repRange:[8,12],cues:"Chest on pad removes lower back fatigue"},
-      {id:"b6_hack",name:"Hack Squat",muscle:"Quads",sets:3,repRange:[10,15],cues:"After deadlifts — machine takes load off spine"},
-      {id:"b6_cable_fly",name:"Cable Fly",muscle:"Chest",sets:3,repRange:[12,15],cues:"Squeeze the chest — accessory after the row"},
-      {id:"b6_upright",name:"Upright Row",muscle:"Shoulders",sets:3,repRange:[10,15],cues:"Wide grip, elbows high, cable preferred"},
-      {id:"b6_dips_tri",name:"Tricep Dips",muscle:"Triceps",sets:3,repRange:[8,12],cues:"Upright torso, elbows close to body"},
-    ]},
-    {id:"C",label:"Full Body C",focus:"Unilateral Legs · Arms · Glutes",emoji:"🔱",exercises:[
-      {id:"b6_split",name:"Bulgarian Split Squat",muscle:"Quads",sets:4,repRange:[6,10],cues:"Add weight — single-leg strength builder"},
-      {id:"b6_sumo",name:"Sumo Deadlift",muscle:"Hamstrings",sets:3,repRange:[6,10],cues:"Wide stance, toes out, drive knees out"},
-      {id:"b6_nordic",name:"Nordic Curl",muscle:"Hamstrings",sets:3,repRange:[6,10],cues:"The hardest hamstring exercise — go slow"},
-      {id:"b6_leg_ext",name:"Leg Extension",muscle:"Quads",sets:3,repRange:[12,15],cues:"Pump after heavy legs — full squeeze"},
-      {id:"b6_conc_curl",name:"Concentration Curl",muscle:"Biceps",sets:3,repRange:[12,15],cues:"Full isolation — no cheating"},
-      {id:"b6_hip_thrust",name:"Hip Thrust",muscle:"Glutes",sets:4,repRange:[8,12],cues:"Load heavy, 1s pause at top"},
-      {id:"b6_standing_calf",name:"Standing Calf Raise",muscle:"Calves",sets:4,repRange:[12,15],cues:"Full stretch at bottom, pause at top"},
-    ]},
-  ]},
-];
-
 // ═══════════════════════════════════════════════════════════════════
-// TRANSLATIONS
+// STORAGE (must be first — everything else depends on ls)
 // ═══════════════════════════════════════════════════════════════════
-const TRANS={
-  en:{
-    // Nav
-    nav_home:'Home',nav_log:'Log',nav_program:'Program',nav_settings:'Settings',
-    // Home
-    ready:'Ready to',build:'build?',
-    sub:'3 days. Full body. 12 weeks of variation.',
-    stat_sessions:'Sessions',stat_week:'This week',stat_swap:'Swap in',
-    up_next:'UP NEXT',rest_between:'REST 1 DAY BETWEEN',
-    start_workout:'START WORKOUT →',
-    all_days:'All days',
-    swap_alert:'🔄 BLOCK SWAP IN',swap_sessions:'SESSION',swap_sessions_pl:'SESSIONS',
-    coming_up:'Coming up:',
-    swap_in:'Swap in',session_s:'session',sessions_s:'sessions',
-    // Workout
-    sets_done:'SETS DONE',finish_workout:'✓ FINISH WORKOUT',
-    complete_all:'Complete all sets to finish',
-    quitter_btn:'Push here if you want to give up without completing all the sets',
-    quitter_confirm:'Are you sure you want to be a pussy ass quitter?',
-    cancel_confirm:'Cancel? Progress will be lost.',
-    rest_label:'REST',skip:'SKIP',
-    sets:'sets',reps:'reps',
-    last:'Last',try:'try',
-    double_tap:'Double-tap 💪🏻 to edit a set',
-    swap_btn:'⇄ Swap',load_badge:'↑ LOAD',
-    sets_col:'Reps ↕',
-    // Swap modal
-    swap_exercise:'Swap Exercise',muscle_label:'Muscle:',
-    current:'current',in_use:'in use',
-    // Complete
-    done:'DONE!',duration:'Duration',exercises:'Exercises',vol:'kg Vol.',
-    up_next_label:'Up next',back_home:'← BACK TO HOME',
-    block_switch:'🔄 Block Switch!',now_starting:'Now starting',
-    // History
-    history:'History',no_sessions:'No sessions yet. Start today! 💪',
-    ex_label:'ex',vol_label:'kg vol.',
-    // Program
-    the_program:'The Program',
-    program_desc:'12 weeks of unique training before anything repeats. Blocks swap after 2 full completions (6 sessions). Tap ⇄ Swap during any workout to replace an unavailable exercise.',
-    sessions_until:'sessions until',session_until:'session until',
-    active_now:'· Active now',
-    full_body:'FULL BODY · 3×/WEEK · 6 BLOCKS · 12 WEEKS',
-    // Settings
-    settings:'Settings',
-    rest_timer:'Rest Timer',
-    enable_rest:'Enable rest timer',
-    rest_auto:'Auto-starts after each completed set',
-    duration:'Duration',custom_sec:'Custom (sec)',
-    language:'Language',
-    how_to:'How to use',
-    app_guide:'App guide',
-    app_guide_sub:'How workouts, blocks, swaps and more work',
-    guide_title:'How to use',
-    logging_title:'Logging a workout',
-    blocks_title:'Training blocks',
-    swap_title:'Swapping exercises',
-    overload_title:'Progressive overload',
-    data_title:'Your data',
-    guide_step1_title:'Set your reps',
-    guide_step1:'Tap the reps button to cycle through the rep range, from top down. The target range is shown as a placeholder.',
-    guide_step2_title:'Enter weight',
-    guide_step2:'Type kg into the first set — all remaining sets fill automatically. Changing any set cascades forward to undone sets.',
-    guide_step3_title:'Mark set done',
-    guide_step3:'Tap ✓ to lock in the set. The rest timer starts and the progress bar updates.',
-    guide_step4_title:'Edit a done set',
-    guide_step4:'Double-tap the 💪🏻 emoji on a completed set to reopen it and change reps or weight.',
-    guide_step5_title:'Finish',
-    guide_step5:'When all sets are done, FINISH WORKOUT lights up. To end early, use the quit link at the bottom — your partial session is still saved.',
-    guide_blocks_desc:'There are <span style="color:#f2f0ea;font-weight:700">6 blocks</span>, each with a different training style. The block advances after <span style="color:#e8ff47;font-weight:700">2 full passes</span> through Days A, B and C — 6 sessions total. The Home screen shows how many sessions remain until the next swap.',
-    guide_swap_desc:'Don\'t have the equipment? Tap <span style="color:#e8ff47;font-weight:700">⇄ Swap</span> on any uncompleted exercise to open a list of alternatives for the same muscle group. Only the current session is affected — the program block stays unchanged.',
-    guide_overload_desc:'If you hit the top of the rep range on every set last session, the app shows a <span style="color:#e8ff47;font-weight:700">↑ LOAD</span> badge and pre-fills a 2.5% heavier weight. Hit it consistently to keep progressing.',
-    guide_data_desc:'Everything is saved locally on your device. Weights, history, settings and block progress all persist between visits. Clearing your browser data will reset the app.',
-    // Block themes
-    theme1:'Barbell Compounds',theme2:'Dumbbell & Machine',theme3:'Power & Strength Bias',
-    theme4:'Isolation & Volume',theme5:'Cable & Unilateral',theme6:'Hybrid Strength–Hypertrophy',
-    // Day labels/focus
-    day_a_label:'Full Body A',day_b_label:'Full Body B',day_c_label:'Full Body C',
-    focus_a:'Squat · Push · Pull',focus_b:'Hinge · Vertical Push/Pull · Triceps',focus_c:'Unilateral Legs · Arms · Glutes',
-    // Muscles
-    m_quads:'Quads',m_hamstrings:'Hamstrings',m_glutes:'Glutes',m_calves:'Calves',
-    m_chest:'Chest',m_back:'Back',m_shoulders:'Shoulders',m_biceps:'Biceps',m_triceps:'Triceps',
-    // Exercise names
-    'Squat':'Squat','Hack Squat':'Hack Squat','Leg Press':'Leg Press',
-    'Leg Press (narrow)':'Leg Press (narrow)','Leg Extension':'Leg Extension',
-    'Bulgarian Split Squat':'Bulgarian Split Squat','Walking Lunge':'Walking Lunge',
-    'Goblet Squat':'Goblet Squat','Step-Up':'Step-Up',
-    'Deadlift':'Deadlift','Romanian Deadlift':'Romanian Deadlift',
-    'Trap Bar Deadlift':'Trap Bar Deadlift','Sumo Deadlift':'Sumo Deadlift',
-    'Lying Leg Curl':'Lying Leg Curl','Seated Leg Curl':'Seated Leg Curl',
-    'Nordic Curl':'Nordic Curl','Good Morning':'Good Morning',
-    'Hip Thrust':'Hip Thrust','Barbell Glute Bridge':'Barbell Glute Bridge',
-    'Cable Kickback':'Cable Kickback','Hip Abduction Machine':'Hip Abduction Machine',
-    'Standing Calf Raise':'Standing Calf Raise','Seated Calf Raise':'Seated Calf Raise',
-    'Leg Press Calf Raise':'Leg Press Calf Raise',
-    'Bench Press':'Bench Press','Incline DB Press':'Incline DB Press',
-    'DB Bench Press':'DB Bench Press','Cable Fly':'Cable Fly','Pec Deck':'Pec Deck',
-    'DB Pullover':'DB Pullover','Dips (chest focus)':'Dips (chest focus)',
-    'Weighted Push-Up':'Weighted Push-Up','Low-to-High Cable Fly':'Low-to-High Cable Fly',
-    'Cable Row':'Cable Row','DB Row':'DB Row','Chest-Supported Row':'Chest-Supported Row',
-    'Lat Pulldown':'Lat Pulldown','Pull-Up / Chin-Up':'Pull-Up / Chin-Up',
-    'Single-Arm Cable Row':'Single-Arm Cable Row',
-    'Cable Straight-Arm Pullover':'Cable Straight-Arm Pullover',
-    'Barbell Row':'Barbell Row','T-Bar Row':'T-Bar Row',
-    'Overhead Press':'Overhead Press','DB Shoulder Press':'DB Shoulder Press',
-    'Lateral Raise':'Lateral Raise','Cable Lateral Raise':'Cable Lateral Raise',
-    'Face Pull':'Face Pull','Rear Delt Fly':'Rear Delt Fly',
-    'Upright Row':'Upright Row','Arnold Press':'Arnold Press',
-    'Barbell Curl':'Barbell Curl','Hammer Curl':'Hammer Curl',
-    'Incline DB Curl':'Incline DB Curl','Spider Curl':'Spider Curl',
-    'Cable Curl':'Cable Curl','Concentration Curl':'Concentration Curl',
-    'Reverse Curl':'Reverse Curl',
-    'Skullcrusher':'Skullcrusher','Cable Pushdown':'Cable Pushdown',
-    'Overhead Tricep Extension':'Overhead Tricep Extension','Tricep Dips':'Tricep Dips',
-    'DB Kickback':'DB Kickback','Close-Grip Bench Press':'Close-Grip Bench Press',
-    // Block-specific exercise name variants
-    'Weighted Dips':'Weighted Dips','Weighted Pull-Up':'Weighted Pull-Up',
-    'Dips':'Dips','Pull-Up':'Pull-Up',
-    'Close-Grip Bench':'Close-Grip Bench',
-    'Leg Extension (1.5 rep)':'Leg Extension (1.5 rep)',
-  },
-  fi:{
-    // Nav
-    nav_home:'Koti',nav_log:'Loki',nav_program:'Ohjelma',nav_settings:'Asetukset',
-    // Home
-    ready:'Valmis',build:'treenaamaan?',
-    sub:'3 päivää. Koko keho. 12 viikkoa vaihtelua.',
-    stat_sessions:'Treenit',stat_week:'Tällä viikolla',stat_swap:'Vaihto',
-    up_next:'SEURAAVAKSI',rest_between:'PIDÄ 1 PV LEPOA VÄLISSÄ',
-    start_workout:'ALOITA TREENI →',
-    all_days:'Kaikki päivät',
-    swap_alert:'🔄 LOHKONVAIHTO',swap_sessions:'TREENIN PÄÄSTÄ',swap_sessions_pl:'TREENIN PÄÄSTÄ',
-    coming_up:'Tulossa:',
-    swap_in:'Vaihto',session_s:'treenin päästä',sessions_s:'treenin päästä',
-    // Workout
-    sets_done:'SARJAA TEHTY',finish_workout:'✓ TREENI VALMIS',
-    complete_all:'Tee kaikki sarjat lopettaaksesi',
-    quitter_btn:'Paina tästä jos haluat luovuttaa kesken treenin',
-    quitter_confirm:'Oletko varma että haluat olla luuseri ja lopettaa?',
-    cancel_confirm:'Perutaanko? Edistyminen menetetään.',
-    rest_label:'LEPO',skip:'OHITA',
-    sets:'sarjaa',reps:'toistoa',
-    last:'Edellinen',try:'kokeile',
-    double_tap:'Tuplapaina 💪🏻 muokataksesi sarjaa',
-    swap_btn:'⇄ Vaihda',load_badge:'↑ LISÄÄ',
-    sets_col:'Toistot ↕',
-    // Swap modal
-    swap_exercise:'Vaihda liike',muscle_label:'Lihasryhmä:',
-    current:'nykyinen',in_use:'käytössä',
-    // Complete
-    done:'VALMIS!',duration:'Kesto',exercises:'Liikkeet',vol:'kg Vol.',
-    up_next_label:'Seuraavaksi',back_home:'← TAKAISIN KOTIIN',
-    block_switch:'🔄 Lohkonvaihto!',now_starting:'Aloitetaan nyt',
-    // History
-    history:'Historia',no_sessions:'Ei treeniä vielä. Aloita tänään! 💪',
-    ex_label:'liikettä',vol_label:'kg vol.',
-    // Program
-    the_program:'Ohjelma',
-    program_desc:'12 viikkoa ainutlaatuista treeniä ennen kuin mikään toistuu. Lohkot vaihtuvat 2 täyden kierroksen jälkeen (6 treeniä). Paina ⇄ Vaihda treenin aikana korvataksesi liikkeen.',
-    sessions_until:'treenin päästä lohkoon',session_until:'treenin päästä lohkoon',
-    active_now:'· Aktiivinen nyt',
-    full_body:'KOKO KEHO · 3×/VIIKKO · 6 LOHKOA · 12 VIIKKOA',
-    // Settings
-    settings:'Asetukset',
-    rest_timer:'Lepotimer',
-    enable_rest:'Ota lepotimer käyttöön',
-    rest_auto:'Käynnistyy automaattisesti jokaisen sarjan jälkeen',
-    duration:'Kesto',custom_sec:'Mukautettu (sek)',
-    language:'Kieli',
-    how_to:'Käyttöohjeet',
-    app_guide:'Sovelluksen opas',
-    app_guide_sub:'Miten treenit, lohkot, vaihdot ja muut toimivat',
-    guide_title:'Käyttöohjeet',
-    logging_title:'Treenin kirjaaminen',
-    blocks_title:'Treeniohjelma',
-    swap_title:'Liikkeen vaihtaminen',
-    overload_title:'Progressiivinen ylikuormitus',
-    data_title:'Tietosi',
-    guide_step1_title:'Aseta toistot',
-    guide_step1:'Napauta toistonappia syklataksesi rep-alueen läpi ylhäältä alas. Tavoitealue näytetään oletuksena.',
-    guide_step2_title:'Syötä paino',
-    guide_step2:'Kirjoita kg ensimmäiseen sarjaan — kaikki jäljellä olevat sarjat täyttyvät automaattisesti. Jonkin sarjan muuttaminen päivittää kaikki sen jälkeiset tekemättömät sarjat.',
-    guide_step3_title:'Merkitse sarja tehdyksi',
-    guide_step3:'Napauta ✓ lukkiaksesi sarjan. Lepotimer käynnistyy ja edistymispalkki päivittyy.',
-    guide_step4_title:'Muokkaa tehtyä sarjaa',
-    guide_step4:'Tuplanaputa 💪🏻 emojia valmiissa sarjassa avataksesi sen uudelleen muokkausta varten.',
-    guide_step5_title:'Lopetus',
-    guide_step5:'Kun kaikki sarjat on tehty, TREENI VALMIS -nappi aktivoituu. Voit myös lopettaa aikaisemmin alla olevasta linkistä — osittainen treeni tallentuu silti.',
-    guide_blocks_desc:'Ohjelmassa on <span style="color:#f2f0ea;font-weight:700">6 lohkoa</span>, joissa kullakin on erilainen treenityyli. Lohko vaihtuu kun olet suorittanut <span style="color:#e8ff47;font-weight:700">2 täyttä kierrosta</span> A, B ja C päivien läpi — 6 treeniä yhteensä. Kotinäytöllä näkyy montako treeniä seuraavaan vaihtoon on jäljellä.',
-    guide_swap_desc:'Eikö laitetta löydy? Napauta <span style="color:#e8ff47;font-weight:700">⇄ Vaihda</span> missä tahansa keskeneräisessä liikkeessä nähdäksesi vaihtoehdot samalle lihasryhmälle. Vain nykyinen treeni muuttuu — ohjelma pysyy ennallaan.',
-    guide_overload_desc:'Jos osuit viime treenissä rep-alueen ylärajaan jokaisessa sarjassa, sovellus näyttää <span style="color:#e8ff47;font-weight:700">↑ LISÄÄ</span> -merkinnän ja ehdottaa 2,5% raskaampaa painoa. Jatka johdonmukaisesti eteenpäin.',
-    guide_data_desc:'Kaikki tallennetaan laitteellesi. Painot, historia, asetukset ja lohkon edistyminen säilyvät käyntien välillä. Selaimen tietojen tyhjentäminen nollaa sovelluksen.',
-    // Block themes
-    theme1:'Tangot & Perusliikkeet',theme2:'Käsipainot & Laitteet',theme3:'Voima & Teho',
-    theme4:'Eristysliikkeet & Volyymi',theme5:'Taljatyöskentely & Unilateraali',theme6:'Hybridi: Voima–Hypertrofia',
-    // Day labels/focus
-    day_a_label:'Koko keho A',day_b_label:'Koko keho B',day_c_label:'Koko keho C',
-    focus_a:'Kyykky · Työntö · Veto',focus_b:'Vipu · Pystypunnerrus/Ylätalja · Ojentajat',focus_c:'Unilat. jalat · Kädet · Pakarat',
-    // Muscles
-    m_quads:'Etureisi',m_hamstrings:'Takareidet',m_glutes:'Pakarat',m_calves:'Pohkeet',
-    m_chest:'Rintalihas',m_back:'Selkä',m_shoulders:'Hartiat',m_biceps:'Hauikset',m_triceps:'Ojentajat',
-    // Exercise names
-    'Squat':'Kyykky','Hack Squat':'Hack-kyykky','Leg Press':'Jalkaprässi',
-    'Leg Press (narrow)':'Jalkaprässi (kapea)','Leg Extension':'Jalan ojennus',
-    'Bulgarian Split Squat':'Bulgarian split-kyykky','Walking Lunge':'Askelkyykky',
-    'Goblet Squat':'Goblet-kyykky','Step-Up':'Step-Up',
-    'Deadlift':'Maastaveto','Romanian Deadlift':'Romanialainen maastaveto',
-    'Trap Bar Deadlift':'Trap bar -maastaveto','Sumo Deadlift':'Sumo-maastaveto',
-    'Lying Leg Curl':'Polven koukistus maaten','Seated Leg Curl':'Polven koukistus istuen',
-    'Nordic Curl':'Nordic Curl','Good Morning':'Good Morning',
-    'Hip Thrust':'Hip Thrust','Barbell Glute Bridge':'Lantionnosto levytangolla',
-    'Cable Kickback':'Kaapeli-potku taakse','Hip Abduction Machine':'Lonkan loitonnus -laite',
-    'Standing Calf Raise':'Seisova pohjenoste','Seated Calf Raise':'Istuva pohjenoste',
-    'Leg Press Calf Raise':'Pohjenoste jalkaprässissä',
-    'Bench Press':'Penkkipunnerrus','Incline DB Press':'Vinopenkkipunnerrus käsipainoilla',
-    'DB Bench Press':'Penkkipunnerrus käsipainoilla','Cable Fly':'Rintarutistus taljassa',
-    'Pec Deck':'Pec Deck','DB Pullover':'Käsipainopullover',
-    'Dips (chest focus)':'Dippi (rintapainotteinen)','Weighted Push-Up':'Punnerrus lisäpainolla',
-    'Low-to-High Cable Fly':'Rintarutistus taljassa alhaalta ylös',
-    'Cable Row':'Alatalja','DB Row':'Käsipainosoutu',
-    'Chest-Supported Row':'Rintapenkkisoutu','Lat Pulldown':'Ylätalja',
-    'Pull-Up / Chin-Up':'Leuanveto','Single-Arm Cable Row':'Yksikätinen alatalja',
-    'Cable Straight-Arm Pullover':'Kaapeli-pullover suorin käsin',
-    'Barbell Row':'Kulmasoutu levytangolla','T-Bar Row':'Kulmasoutu T-tangolla',
-    'Overhead Press':'Pystypunnerrus','DB Shoulder Press':'Pystypunnerrus käsipainoilla',
-    'Lateral Raise':'Vipunosto sivulle','Cable Lateral Raise':'Vipunosto sivulle taljassa',
-    'Face Pull':'Face Pull','Rear Delt Fly':'Vipunosto taakse',
-    'Upright Row':'Pystysoutu','Arnold Press':'Arnold-prässi',
-    'Barbell Curl':'Hauiskääntö tangolla','Hammer Curl':'Hammer Curl',
-    'Incline DB Curl':'Hauiskääntö vinopenkissä käsipainoilla',
-    'Spider Curl':'Spider Curl','Cable Curl':'Hauiskääntö taljassa',
-    'Concentration Curl':'Keskitetty hauiskääntö (Concentration Curl)',
-    'Reverse Curl':'Hauiskääntö myötäotteella',
-    'Skullcrusher':'Skullcrusher','Cable Pushdown':'Ojentajapunnerrus taljassa',
-    'Overhead Tricep Extension':'Ojentajan ojennus pään yli',
-    'Tricep Dips':'Dippi (ojentajapainotteinen)',
-    'DB Kickback':'Kickback käsipainoilla (ojentaja)',
-    'Close-Grip Bench Press':'Kapea penkkipunnerrus',
-    // Block-specific variants
-    'Weighted Dips':'Dippi lisäpainolla','Weighted Pull-Up':'Leuanveto lisäpainolla',
-    'Dips':'Dippi','Pull-Up':'Leuanveto',
-    'Close-Grip Bench':'Kapea penkkipunnerrus',
-    'Leg Extension (1.5 rep)':'Jalan ojennus (1,5 toisto)',
-  }
-};
-
-// ═══════════════════════════════════════════════════════════════════
-// STORAGE
-// ═══════════════════════════════════════════════════════════════════
-const SK={weights:"il_weights",history:"il_history",nextDay:"il_nextDay",blockCompletions:"il_blockCompletions",settings:"il_settings"};
+const SK={weights:"il_weights",history:"il_history",nextDay:"il_nextDay",blockStart:"il_blockStart",blockIdx:"il_blockIdx"};
 const ls={
   get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch{return null;}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
 };
-function getSettings(){return Object.assign({restEnabled:true,restSecs:90,lang:'en'},ls.get(SK.settings)||{});}
-function saveSettings(s){ls.set(SK.settings,s);}
-function getLang(){return getSettings().lang;}
-function t(key){const l=getLang();return(TRANS[l]&&TRANS[l][key])||TRANS.en[key]||key;}
-// blockCompletions = total number of full-block completions ever.
-function getTotalBlockCompletions(){return ls.get(SK.blockCompletions)||0;}
+
+// ═══════════════════════════════════════════════════════════════════
+// PROFILE
+// ═══════════════════════════════════════════════════════════════════
+function getProfile(){return ls.get("il_profile")||null;}
+function saveProfile(p){ls.set("il_profile",p);}
+function getSettings(){return ls.get("il_settings")||{restSeconds:90};}
+function saveSetting(key,val){const s=getSettings();s[key]=val;ls.set("il_settings",s);}
+function getRestDuration(){const s=getSettings();return s.restSeconds!==undefined?s.restSeconds:90;}
+
+// ═══════════════════════════════════════════════════════════════════
+// I18N — Language / Kieli
+// ═══════════════════════════════════════════════════════════════════
+function getLang(){return getSettings().lang||'en';}
+function setLang(lang){saveSetting('lang',lang);document.documentElement.lang=lang;render();}
+function t(key){return(T[getLang()]||T.en)[key]||T.en[key]||key;}
+
+const T={
+en:{
+// Exercise names
+lib_squat:"Squat",lib_hack_squat:"Hack Squat",lib_leg_press:"Leg Press",lib_leg_press_n:"Leg Press (narrow)",
+lib_leg_ext:"Leg Extension",lib_split_squat:"Bulgarian Split Squat",lib_lunge:"Walking Lunge",lib_goblet_squat:"Goblet Squat",
+lib_step_up:"Step-Up",lib_deadlift:"Deadlift",lib_rdl:"Romanian Deadlift",lib_trap_dl:"Trap Bar Deadlift",
+lib_sumo_dl:"Sumo Deadlift",lib_leg_curl:"Lying Leg Curl",lib_seated_curl:"Seated Leg Curl",lib_nordic:"Nordic Curl",
+lib_good_morning:"Good Morning",lib_hip_thrust:"Hip Thrust",lib_glute_bridge:"Barbell Glute Bridge",
+lib_cable_kickback:"Cable Kickback",lib_abduction:"Hip Abduction Machine",lib_standing_calf:"Standing Calf Raise",
+lib_seated_calf:"Seated Calf Raise",lib_leg_press_calf:"Leg Press Calf Raise",lib_bench:"Bench Press",
+lib_incline_db:"Incline DB Press",lib_db_bench:"DB Bench Press",lib_cable_fly:"Cable Fly",lib_pec_deck:"Pec Deck",
+lib_db_pullover:"DB Pullover",lib_dips:"Dips (chest focus)",lib_pushup_weighted:"Weighted Push-Up",
+lib_low_cable_fly:"Low-to-High Cable Fly",lib_cable_row:"Cable Row",lib_db_row:"DB Row",
+lib_chest_row:"Chest-Supported Row",lib_lat_pull:"Lat Pulldown",lib_pullup:"Pull-Up / Chin-Up",
+lib_sa_cable_row:"Single-Arm Cable Row",lib_pullover_cable:"Cable Straight-Arm Pullover",lib_bb_row:"Barbell Row",
+lib_tbar_row:"T-Bar Row",lib_ohp:"Overhead Press",lib_db_ohp:"DB Shoulder Press",lib_lat_raise:"Lateral Raise",
+lib_cable_raise:"Cable Lateral Raise",lib_face_pull:"Face Pull",lib_rear_delt:"Rear Delt Fly",
+lib_upright_row:"Upright Row",lib_arnold_press:"Arnold Press",lib_bb_curl:"Barbell Curl",lib_hammer:"Hammer Curl",
+lib_incline_curl:"Incline DB Curl",lib_spider_curl:"Spider Curl",lib_cable_curl:"Cable Curl",
+lib_conc_curl:"Concentration Curl",lib_reverse_curl:"Reverse Curl",lib_skull:"Skullcrusher",
+lib_pushdown:"Cable Pushdown",lib_overhead_tri:"Overhead Tricep Extension",lib_dips_tri:"Tricep Dips",
+lib_kickback:"DB Kickback",lib_close_bench:"Close-Grip Bench Press",
+// Cues
+cue_lib_squat:"Full depth, knees track toes, brace hard",
+cue_lib_hack_squat:"Feet high on platform, full depth",
+cue_lib_leg_press:"Shoulder-width feet, don't lock out",
+cue_lib_leg_press_n:"Narrow feet, emphasises outer quad",
+cue_lib_leg_ext:"Full range, hard squeeze at top",
+cue_lib_split_squat:"Front foot forward, torso upright",
+cue_lib_lunge:"Long stride, knee tracks over toes",
+cue_lib_goblet_squat:"Elbows inside knees, chest tall",
+cue_lib_step_up:"Drive through heel of front foot",
+cue_lib_deadlift:"Lats tight, drive floor away",
+cue_lib_rdl:"Push hips back, feel the stretch",
+cue_lib_trap_dl:"Hips down to start, chest tall",
+cue_lib_sumo_dl:"Wide stance, toes out, drive knees out",
+cue_lib_leg_curl:"Full ROM, slow 3s eccentric",
+cue_lib_seated_curl:"Full stretch, pause at peak",
+cue_lib_nordic:"Slow eccentric, brace core",
+cue_lib_good_morning:"Soft knees, hinge at hips",
+cue_lib_hip_thrust:"Drive through heels, squeeze at top",
+cue_lib_glute_bridge:"Feet flat, drive hips to ceiling",
+cue_lib_cable_kickback:"Squeeze glute at top, control down",
+cue_lib_abduction:"Full ROM, don't use momentum",
+cue_lib_standing_calf:"Full stretch at bottom, pause at top",
+cue_lib_seated_calf:"Loaded stretch, pause at top",
+cue_lib_leg_press_calf:"Toes on edge, full ROM",
+cue_lib_bench:"1s pause at chest, drive through heels",
+cue_lib_incline_db:"Elbows 45°, feel upper chest stretch",
+cue_lib_db_bench:"Greater ROM than barbell, stretch at bottom",
+cue_lib_cable_fly:"Slight elbow bend, hard squeeze at center",
+cue_lib_pec_deck:"Control the opening, squeeze at center",
+cue_lib_db_pullover:"Feel rib cage expand, lats and chest stretch",
+cue_lib_dips:"Lean forward, elbows flared slightly",
+cue_lib_pushup_weighted:"Weight plate on back, full ROM",
+cue_lib_low_cable_fly:"Pull upward arc, squeeze upper chest",
+cue_lib_cable_row:"Pull to lower chest, squeeze shoulder blades",
+cue_lib_db_row:"Elbow close to body, full stretch",
+cue_lib_chest_row:"Chest on pad, pull elbows hard",
+cue_lib_lat_pull:"Lean back slightly, pull to upper chest",
+cue_lib_pullup:"Dead hang start, chin over bar",
+cue_lib_sa_cable_row:"Full rotation, stretch then row to hip",
+cue_lib_pullover_cable:"Slight elbow bend, feel lats at top",
+cue_lib_bb_row:"Hinge 45°, pull to belly button",
+cue_lib_tbar_row:"Neutral grip, chest tall, squeeze",
+cue_lib_ohp:"Straight bar path, brace core",
+cue_lib_db_ohp:"Neutral grip, full lockout",
+cue_lib_lat_raise:"Lead with elbows, slight forward lean",
+cue_lib_cable_raise:"Elbow leads, don't shrug",
+cue_lib_face_pull:"Pull to forehead, external rotate",
+cue_lib_rear_delt:"Lead with elbows, avoid traps",
+cue_lib_upright_row:"Wide grip, elbows high, cable preferred",
+cue_lib_arnold_press:"Rotate palm out as you press",
+cue_lib_bb_curl:"No swinging, full ROM",
+cue_lib_hammer:"Neutral grip, no swinging",
+cue_lib_incline_curl:"Arms behind torso for extra stretch",
+cue_lib_spider_curl:"Chest on incline, elbows forward",
+cue_lib_cable_curl:"Constant tension, squeeze at top",
+cue_lib_conc_curl:"Elbow on inner thigh, strict form",
+cue_lib_reverse_curl:"Overhand grip, targets brachialis",
+cue_lib_skull:"Upper arms vertical, full extension",
+cue_lib_pushdown:"Elbows locked at sides, full extension",
+cue_lib_overhead_tri:"Elbows forward, stretch at bottom",
+cue_lib_dips_tri:"Upright torso, elbows close",
+cue_lib_kickback:"Upper arm parallel to floor, full extension",
+cue_lib_close_bench:"Hands shoulder-width, elbows tight",
+// Muscle groups
+muscle_Quads:"Quads",muscle_Hamstrings:"Hamstrings",muscle_Glutes:"Glutes",muscle_Calves:"Calves",
+muscle_Chest:"Chest",muscle_Back:"Back",muscle_Shoulders:"Shoulders",muscle_Biceps:"Biceps",muscle_Triceps:"Triceps",
+// Block themes
+"theme_Barbell Compounds":"Barbell Compounds","theme_Dumbbell & Machine":"Dumbbell & Machine",
+"theme_Strength Focus":"Strength Focus","theme_Volume & Isolation":"Volume & Isolation",
+"theme_Power & Strength":"Power & Strength","theme_Isolation & Volume":"Isolation & Volume",
+"theme_Cable & Unilateral":"Cable & Unilateral","theme_Hybrid Strength–Hypertrophy":"Hybrid Strength–Hypertrophy",
+"theme_Barbell Foundation":"Barbell Foundation","theme_Dumbbell & Cable":"Dumbbell & Cable",
+"theme_Strength Phase":"Strength Phase","theme_Volume & Pump":"Volume & Pump",
+// Day labels
+"day_Full Body A":"Full Body A","day_Full Body B":"Full Body B","day_Full Body C":"Full Body C",
+"day_Upper A":"Upper A","day_Upper B":"Upper B","day_Lower A":"Lower A","day_Lower B":"Lower B",
+"day_Push":"Push","day_Pull":"Pull","day_Legs":"Legs","day_Upper":"Upper","day_Lower":"Lower",
+// Day focuses
+"focus_Squat · Push · Pull · Arms":"Squat · Push · Pull · Arms",
+"focus_Hinge · Press · Row · Glutes":"Hinge · Press · Row · Glutes",
+"focus_Machine Legs · DB Push · Pull":"Machine Legs · DB Push · Pull",
+"focus_Hinge · Shoulders · Back · Iso":"Hinge · Shoulders · Back · Iso",
+"focus_Heavy Squat · Bench · Row":"Heavy Squat · Bench · Row",
+"focus_Heavy Hinge · OHP · Pull":"Heavy Hinge · OHP · Pull",
+"focus_High-Rep Legs · Push · Pull":"High-Rep Legs · Push · Pull",
+"focus_High-Rep Hinge · Shoulders · Arms":"High-Rep Hinge · Shoulders · Arms",
+"focus_Squat · Push · Pull":"Squat · Push · Pull",
+"focus_Hinge · Vertical Push · Triceps":"Hinge · Vertical Push · Triceps",
+"focus_Unilateral · Arms · Glutes":"Unilateral · Arms · Glutes",
+"focus_Heavy Squat · Push · Pull":"Heavy Squat · Push · Pull",
+"focus_Heavy Hinge · OHP · Row":"Heavy Hinge · OHP · Row",
+"focus_Unilateral · Strength · Glutes":"Unilateral · Strength · Glutes",
+"focus_High-Rep Squat · Push · Pull":"High-Rep Squat · Push · Pull",
+"focus_Unilateral · Pump · Glutes":"Unilateral · Pump · Glutes",
+"focus_Unilateral Squat · Cable Push/Pull":"Unilateral Squat · Cable Push/Pull",
+"focus_Hinge · Press · Row · Triceps":"Hinge · Press · Row · Triceps",
+"focus_Unilateral · Pump · Calves":"Unilateral · Pump · Calves",
+"focus_Hinge · OHP · Row · Triceps":"Hinge · OHP · Row · Triceps",
+"focus_Horizontal Push/Pull":"Horizontal Push/Pull",
+"focus_Squat · Glutes · Hamstrings":"Squat · Glutes · Hamstrings",
+"focus_Vertical Push/Pull · Arms":"Vertical Push/Pull · Arms",
+"focus_Hinge · Unilateral · Calves":"Hinge · Unilateral · Calves",
+"focus_DB Press · Machine Row":"DB Press · Machine Row",
+"focus_Machine Squat · Glutes":"Machine Squat · Glutes",
+"focus_DB Shoulders · Cable Work":"DB Shoulders · Cable Work",
+"focus_Hinge · Unilateral":"Hinge · Unilateral",
+"focus_Heavy Bench · Row":"Heavy Bench · Row",
+"focus_Heavy Squat · Glutes":"Heavy Squat · Glutes",
+"focus_Heavy OHP · Pull":"Heavy OHP · Pull",
+"focus_Heavy Hinge · Unilateral":"Heavy Hinge · Unilateral",
+"focus_Push Volume":"Push Volume",
+"focus_Quad & Glute Volume":"Quad & Glute Volume",
+"focus_Pull Volume · Arms":"Pull Volume · Arms",
+"focus_Hinge Volume · Unilateral":"Hinge Volume · Unilateral",
+"focus_Chest · Shoulders · Triceps":"Chest · Shoulders · Triceps",
+"focus_Back · Biceps · Rear Delts":"Back · Biceps · Rear Delts",
+"focus_Squat · Hinge · Glutes · Calves":"Squat · Hinge · Glutes · Calves",
+"focus_Compound Push/Pull · Arms":"Compound Push/Pull · Arms",
+"focus_DB Press · Flies · Delts":"DB Press · Flies · Delts",
+"focus_Rows · Pulldowns · Curls":"Rows · Pulldowns · Curls",
+"focus_Machine Squat · Glutes · Hams":"Machine Squat · Glutes · Hams",
+"focus_Press · Row · Accessories":"Press · Row · Accessories",
+"focus_Hinge · Unilateral · Glutes":"Hinge · Unilateral · Glutes",
+"focus_Heavy Press · Shoulders":"Heavy Press · Shoulders",
+"focus_Heavy Row · Pull-Up":"Heavy Row · Pull-Up",
+"focus_Heavy Squat · Deadlift":"Heavy Squat · Deadlift",
+"focus_Strength Accessories":"Strength Accessories",
+"focus_High-Rep Chest · Delts":"High-Rep Chest · Delts",
+"focus_High-Rep Rows · Curls":"High-Rep Rows · Curls",
+"focus_High-Rep Quads · Glutes":"High-Rep Quads · Glutes",
+"focus_Pump Push/Pull · Arms":"Pump Push/Pull · Arms",
+"focus_Volume Hinge · Unilateral":"Volume Hinge · Unilateral",
+// Navigation
+nav_home:"Home",nav_log:"Log",nav_program:"Program",nav_settings:"Settings",
+// Home view
+home_ready:"Ready to<br>build?",home_days_week:"days/week.",home_full_body:"Full body.",home_split:"Split training.",
+home_blocks_variation:"blocks of variation.",stat_sessions:"Sessions",stat_this_week:"This week",stat_to_swap:"To swap",
+home_up_next:"UP NEXT",home_day:"DAY",home_start:"START WORKOUT →",
+home_block_swap_in:"BLOCK SWAP IN",home_session:"SESSION",home_sessions:"SESSIONS",
+home_coming_up:"Coming up:",home_sessions_left:"sessions left",home_session_left:"session left",
+home_next:"NEXT",home_all_days:"All days —",
+// Workout view
+workout_sets_done:"SETS DONE",workout_finish:"✓ FINISH WORKOUT",workout_complete_all:"Complete all sets to finish",
+workout_quit:"Quit without completing",workout_rest:"REST",workout_skip:"SKIP",workout_load:"↑ LOAD",
+workout_swap:"⇄ Swap",workout_sets:"sets",workout_reps:"reps",workout_last:"Last:",workout_try:"→ try",
+workout_col_reps:"Reps ↕",workout_col_set:"#",workout_col_kg:"kg",
+workout_hint_edit:"Double-tap 💪🏻 to edit a set",workout_swap_title:"Swap Exercise",
+workout_muscle:"Muscle:",workout_current:"current",workout_in_use:"in use",workout_cancel:"Cancel workout?",
+// Complete view
+complete_done:"DONE!",complete_min:"min",stat_duration:"Duration",stat_exercises:"Exercises",
+stat_volume:"kg Vol.",complete_switch:"Block Switch!",complete_now_starting:"Now starting",
+complete_up_next:"Up next",complete_back:"← BACK TO HOME",
+// History view
+history_title:"History",history_empty:"No sessions yet. Start today! 💪",
+history_ex:"ex",history_vol:"vol.",history_partial:"partial",
+// Program view
+program_title:"The Program",program_full_body:"FULL BODY",program_split:"SPLIT",
+program_per_week:"×/WEEK",program_blocks:"BLOCKS",
+program_desc_1:"training blocks that auto-swap every",program_desc_2:"sessions.",
+program_desc_swap:"Tap ⇄ Swap during any workout to replace an unavailable exercise.",
+program_sessions_until:"sessions until",program_session_until:"session until",program_active:"Active now",
+// Settings view
+settings_title:"Settings",settings_language:"Language",settings_rest:"Rest Timer",
+settings_rest_desc:"Time between sets after marking done",settings_rest_off:"Off",settings_setup:"Your Setup",
+settings_per_week:"per week",settings_female:"Female",settings_male:"Male",
+settings_full_body:"Full Body",settings_split:"Split",settings_program:"program",
+settings_change:"CHANGE",settings_how_to:"How to Use",settings_data:"Data",
+settings_reset:"Reset All Data",settings_reset_warn:"Clears all history, weights, and settings. Cannot be undone.",
+settings_how_1:"Tap a rep number",settings_how_1b:"to cycle through the rep range (starts at top, counts down).",
+settings_how_2:"Enter weight in kg",settings_how_2b:"— filling one set auto-fills forward to all undone sets.",
+settings_how_3:"Tap ✓",settings_how_3b:"to mark a set done. A rest timer starts automatically.",
+settings_how_4:"Double-tap 💪🏻",settings_how_4b:"on a completed set to edit it.",
+settings_how_5:"⇄ Swap",settings_how_5b:"lets you swap any exercise for another in the same muscle group.",
+settings_how_6:"↑ LOAD",settings_how_6b:"means you hit top reps last time — try adding 2.5% weight.",
+settings_how_7:"Quit without completing",settings_how_7b:"saves your done sets to history.",
+// Onboarding view
+ob_tagline:"Your gym. Your rules.",ob_subtitle:"Set up your training plan in 2 taps.",
+ob_freq:"How many days per week?",ob_iam:"I am",ob_full_body:"Full Body",ob_upper_lower:"Upper/Lower",
+ob_ppl:"PPL + U/L",ob_male:"Male",ob_female:"Female",ob_start:"LET'S GO →",
+ob_change_later:"You can change this anytime in Program tab.",
+// Quit modal
+quit_title:"Quit workout?",quit_save_info:"Completed sets will be saved to your history.",
+quit_confirm:"YEAH, I'M OUT",quit_keep:"KEEP GOING 💪",
+// Confirm dialogs
+confirm_reset_profile:"Reset your profile? Your workout history and weights will be kept, but the program will be regenerated.",
+confirm_clear_1:"This will permanently delete ALL your workout history, saved weights, and settings. Are you sure?",
+confirm_clear_2:"Really? This cannot be undone.",
+// Block label
+block_label:"Block",
+},
+fi:{
+// Exercise names
+lib_squat:"Kyykky",lib_hack_squat:"Hack-kyykky",lib_leg_press:"Jalkaprässi",lib_leg_press_n:"Jalkaprässi (kapea)",
+lib_leg_ext:"Polven ojennus",lib_split_squat:"Bulgarialainen askelkyykky",lib_lunge:"Kävelyaskelkyykky",
+lib_goblet_squat:"Goblet-kyykky",lib_step_up:"Penkille nousu",lib_deadlift:"Maastaveto",
+lib_rdl:"Romania-maastaveto",lib_trap_dl:"Maastaveto trap-tangolla",lib_sumo_dl:"Sumomaastaveto",
+lib_leg_curl:"Jalkakoukistus maaten",lib_seated_curl:"Jalkakoukistus istuen",
+lib_nordic:"Pohjoismainen takareisikoukistus",lib_good_morning:"Hyvää huomenta -liike",
+lib_hip_thrust:"Lantionnosto",lib_glute_bridge:"Pakarasilta tangolla",lib_cable_kickback:"Pakarapotku taljassa",
+lib_abduction:"Lonkan loitonnus koneella",lib_standing_calf:"Pohjenousu seisten",
+lib_seated_calf:"Pohjenousu istuen",lib_leg_press_calf:"Pohjenousu jalkaprässissä",
+lib_bench:"Penkkipunnerrus",lib_incline_db:"Vinopenkkipunnerrus käsipainoilla",
+lib_db_bench:"Penkkipunnerrus käsipainolla",lib_cable_fly:"Ristitaljapunnerrus",lib_pec_deck:"Pec deck",
+lib_db_pullover:"Pullover käsipainolla",lib_dips:"Dippi (rinta)",lib_pushup_weighted:"Etunojapunnerrus lisäpainolla",
+lib_low_cable_fly:"Ristitaljavipunosto alhaalta",lib_cable_row:"Alataljasoutu",
+lib_db_row:"Kulmasoutu käsipainolla",lib_chest_row:"Rintanojasoutu",lib_lat_pull:"Ylätaljaveto",
+lib_pullup:"Leuanveto myötä-/vastaotteella",lib_sa_cable_row:"Taljasoutu yhdellä kädellä",
+lib_pullover_cable:"Suorin käsin veto taljassa",lib_bb_row:"Kulmasoutu tangolla",lib_tbar_row:"T-tankosoutu",
+lib_ohp:"Pystypunnerrus tangolla",lib_db_ohp:"Pystypunnerrus käsipainoilla",lib_lat_raise:"Vipunosto sivulle",
+lib_cable_raise:"Vipunosto sivulle taljassa",lib_face_pull:"Face pull",lib_rear_delt:"Vipunosto taakse",
+lib_upright_row:"Pystysoutu",lib_arnold_press:"Arnold-punnerrus",lib_bb_curl:"Hauiskääntö tangolla",
+lib_hammer:"Vasarakääntö",lib_incline_curl:"Hauiskääntö vinopenkillä",lib_spider_curl:"Spider-kääntö",
+lib_cable_curl:"Hauiskääntö taljassa",lib_conc_curl:"Concentration Curl",
+lib_reverse_curl:"Hauiskääntö myötäotteella",lib_skull:"Ranskalainen punnerrus",
+lib_pushdown:"Ojentajapunnerrus taljassa",lib_overhead_tri:"Ojentajapunnerrus pään yläpuolelta",
+lib_dips_tri:"Dippi (ojentajat)",lib_kickback:"Ojentajapotku käsipainolla",
+lib_close_bench:"Kapea penkkipunnerrus",
+// Cues
+cue_lib_squat:"Täysi syvyys, polvet varpaiden suuntaan, keskivartalo tiukkana",
+cue_lib_hack_squat:"Jalat ylös alustalla, täysi syvyys",
+cue_lib_leg_press:"Jalat hartianlevyisesti, älä lukitse polvia",
+cue_lib_leg_press_n:"Kapea asento, korostaa ulompaa etureidettä",
+cue_lib_leg_ext:"Täysi liikerata, purista ylhäällä",
+cue_lib_split_squat:"Etummainen jalka eteen, ylävartalo pystyyn",
+cue_lib_lunge:"Pitkä askel, polvi varpaiden suuntaan",
+cue_lib_goblet_squat:"Kyynärpäät polvien sisäpuolelle, rinta ylös",
+cue_lib_step_up:"Ponnista etummaisen jalan kantapäällä",
+cue_lib_deadlift:"Leveät tiukkana, työnnä lattia pois",
+cue_lib_rdl:"Työnnä lantio taakse, tunne venytys",
+cue_lib_trap_dl:"Lantio alas alkuasennossa, rinta ylös",
+cue_lib_sumo_dl:"Leveä asento, varpaat ulos, polvet auki",
+cue_lib_leg_curl:"Täysi liikerata, hidas 3s jarruttava",
+cue_lib_seated_curl:"Täysi venytys, tauko ylhäällä",
+cue_lib_nordic:"Hidas jarruttava, keskivartalo tiukkana",
+cue_lib_good_morning:"Polvet hieman koukussa, taita lantiosta",
+cue_lib_hip_thrust:"Ponnista kantapäillä, purista ylhäällä",
+cue_lib_glute_bridge:"Jalat tasaisesti, työnnä lantio kohti kattoa",
+cue_lib_cable_kickback:"Purista pakara ylhäällä, hallittu lasku",
+cue_lib_abduction:"Täysi liikerata, älä käytä vauhtia",
+cue_lib_standing_calf:"Täysi venytys alhaalla, tauko ylhäällä",
+cue_lib_seated_calf:"Painotettu venytys, tauko ylhäällä",
+cue_lib_leg_press_calf:"Varpaat reunalla, täysi liikerata",
+cue_lib_bench:"1s tauko rinnalla, ponnista kantapäillä",
+cue_lib_incline_db:"Kyynärpäät 45°, tunne ylärinnan venytys",
+cue_lib_db_bench:"Suurempi liikerata kuin tangolla, venytys alhaalla",
+cue_lib_cable_fly:"Kevyt kyynärpään koukistus, purista keskellä",
+cue_lib_pec_deck:"Hallitse avaus, purista keskellä",
+cue_lib_db_pullover:"Tunne rintakehän avautuvan, leveät ja rinta venyvät",
+cue_lib_dips:"Nojaa eteenpäin, kyynärpäät hieman auki",
+cue_lib_pushup_weighted:"Painolevy selkään, täysi liikerata",
+cue_lib_low_cable_fly:"Vedä ylöspäin kaarella, purista ylärintaa",
+cue_lib_cable_row:"Vedä alavatsaan, purista lapaluut yhteen",
+cue_lib_db_row:"Kyynärpää lähellä vartaloa, täysi venytys",
+cue_lib_chest_row:"Rinta tyynyä vasten, vedä kyynärpäistä",
+cue_lib_lat_pull:"Nojaa hieman taakse, vedä ylärintaan",
+cue_lib_pullup:"Aloita suorista käsistä, leuka tangon yli",
+cue_lib_sa_cable_row:"Täysi kierto, venytä ja soutu lantioon",
+cue_lib_pullover_cable:"Kevyt kyynärpään koukistus, tunne leveät ylhäällä",
+cue_lib_bb_row:"Taita 45°, vedä napaan",
+cue_lib_tbar_row:"Neutraali ote, rinta ylös, purista",
+cue_lib_ohp:"Suora tangon rata, keskivartalo tiukkana",
+cue_lib_db_ohp:"Neutraali ote, täysi ojennus",
+cue_lib_lat_raise:"Johda kyynärpäillä, kevyt eteen nojaus",
+cue_lib_cable_raise:"Kyynärpää johtaa, älä kohota olkapäitä",
+cue_lib_face_pull:"Vedä otsalle, ulkokierto",
+cue_lib_rear_delt:"Johda kyynärpäillä, vältä epäkäslihasta",
+cue_lib_upright_row:"Leveä ote, kyynärpäät ylös, talja suositeltava",
+cue_lib_arnold_press:"Kierrä kämmen ulos punnerruksen aikana",
+cue_lib_bb_curl:"Ei heilumista, täysi liikerata",
+cue_lib_hammer:"Neutraali ote, ei heilumista",
+cue_lib_incline_curl:"Kädet vartalon takana lisävenytystä varten",
+cue_lib_spider_curl:"Rinta vinopenkillä, kyynärpäät eteen",
+cue_lib_cable_curl:"Jatkuva jännitys, purista ylhäällä",
+cue_lib_conc_curl:"Kyynärpää sisäreidellä, tarkka tekniikka",
+cue_lib_reverse_curl:"Myötäote, kohdistuu olkavarseen",
+cue_lib_skull:"Olkavarret pystysuoraan, täysi ojennus",
+cue_lib_pushdown:"Kyynärpäät kiinni kyljissä, täysi ojennus",
+cue_lib_overhead_tri:"Kyynärpäät eteen, venytys alhaalla",
+cue_lib_dips_tri:"Pysty ylävartalo, kyynärpäät lähellä",
+cue_lib_kickback:"Olkavarsi lattian suuntaisesti, täysi ojennus",
+cue_lib_close_bench:"Kädet hartianlevyisesti, kyynärpäät tiukasti",
+// Muscle groups
+muscle_Quads:"Etureidet",muscle_Hamstrings:"Takareidet",muscle_Glutes:"Pakarat",muscle_Calves:"Pohkeet",
+muscle_Chest:"Rinta",muscle_Back:"Selkä",muscle_Shoulders:"Olkapäät",muscle_Biceps:"Hauikset",muscle_Triceps:"Ojentajat",
+// Block themes
+"theme_Barbell Compounds":"Tankoliikkeet","theme_Dumbbell & Machine":"Käsipainot & koneet",
+"theme_Strength Focus":"Voimaharjoittelu","theme_Volume & Isolation":"Volyymi & eristö",
+"theme_Power & Strength":"Voima & räjähtävyys","theme_Isolation & Volume":"Eristö & volyymi",
+"theme_Cable & Unilateral":"Talja & toispuoleiset","theme_Hybrid Strength–Hypertrophy":"Voima–hypertrofia",
+"theme_Barbell Foundation":"Tankoperusta","theme_Dumbbell & Cable":"Käsipainot & talja",
+"theme_Strength Phase":"Voimavaihe","theme_Volume & Pump":"Volyymi & pumppi",
+// Day labels
+"day_Full Body A":"Koko keho A","day_Full Body B":"Koko keho B","day_Full Body C":"Koko keho C",
+"day_Upper A":"Ylävartalo A","day_Upper B":"Ylävartalo B","day_Lower A":"Alavartalo A","day_Lower B":"Alavartalo B",
+"day_Push":"Työntö","day_Pull":"Veto","day_Legs":"Jalat","day_Upper":"Ylävartalo","day_Lower":"Alavartalo",
+// Day focuses
+"focus_Squat · Push · Pull · Arms":"Kyykky · Punnerrus · Veto · Kädet",
+"focus_Hinge · Press · Row · Glutes":"Lantio · Punnerrus · Soutu · Pakarat",
+"focus_Machine Legs · DB Push · Pull":"Konejalat · KP punnerrus · Veto",
+"focus_Hinge · Shoulders · Back · Iso":"Lantio · Olkapäät · Selkä · Eristö",
+"focus_Heavy Squat · Bench · Row":"Raskas kyykky · Penkki · Soutu",
+"focus_Heavy Hinge · OHP · Pull":"Raskas lantio · Pystypunnerrus · Veto",
+"focus_High-Rep Legs · Push · Pull":"Monitoisto jalat · Punnerrus · Veto",
+"focus_High-Rep Hinge · Shoulders · Arms":"Monitoisto lantio · Olkapäät · Kädet",
+"focus_Squat · Push · Pull":"Kyykky · Punnerrus · Veto",
+"focus_Hinge · Vertical Push · Triceps":"Lantio · Pystypunnerrus · Ojentajat",
+"focus_Unilateral · Arms · Glutes":"Toispuoleiset · Kädet · Pakarat",
+"focus_Heavy Squat · Push · Pull":"Raskas kyykky · Punnerrus · Veto",
+"focus_Heavy Hinge · OHP · Row":"Raskas lantio · Pystypunnerrus · Soutu",
+"focus_Unilateral · Strength · Glutes":"Toispuoleiset · Voima · Pakarat",
+"focus_High-Rep Squat · Push · Pull":"Monitoisto kyykky · Punnerrus · Veto",
+"focus_Unilateral · Pump · Glutes":"Toispuoleiset · Pumppi · Pakarat",
+"focus_Unilateral Squat · Cable Push/Pull":"Toispuoleinen kyykky · Talja",
+"focus_Hinge · Press · Row · Triceps":"Lantio · Punnerrus · Soutu · Ojentajat",
+"focus_Unilateral · Pump · Calves":"Toispuoleiset · Pumppi · Pohkeet",
+"focus_Hinge · OHP · Row · Triceps":"Lantio · Pystypunnerrus · Soutu · Ojentajat",
+"focus_Horizontal Push/Pull":"Vaakatasopunnerrus/-veto",
+"focus_Squat · Glutes · Hamstrings":"Kyykky · Pakarat · Takareidet",
+"focus_Vertical Push/Pull · Arms":"Pystypunnerrus/-veto · Kädet",
+"focus_Hinge · Unilateral · Calves":"Lantio · Toispuoleiset · Pohkeet",
+"focus_DB Press · Machine Row":"KP punnerrus · Konesoutu",
+"focus_Machine Squat · Glutes":"Konekyykky · Pakarat",
+"focus_DB Shoulders · Cable Work":"KP olkapäät · Taljatyö",
+"focus_Hinge · Unilateral":"Lantio · Toispuoleiset",
+"focus_Heavy Bench · Row":"Raskas penkki · Soutu",
+"focus_Heavy Squat · Glutes":"Raskas kyykky · Pakarat",
+"focus_Heavy OHP · Pull":"Raskas pystypunnerrus · Veto",
+"focus_Heavy Hinge · Unilateral":"Raskas lantio · Toispuoleiset",
+"focus_Push Volume":"Punnerrusvolyymi",
+"focus_Quad & Glute Volume":"Etureidet & pakarat volyymi",
+"focus_Pull Volume · Arms":"Vetovolyymi · Kädet",
+"focus_Hinge Volume · Unilateral":"Lantiovolyymi · Toispuoleiset",
+"focus_Chest · Shoulders · Triceps":"Rinta · Olkapäät · Ojentajat",
+"focus_Back · Biceps · Rear Delts":"Selkä · Hauikset · Takaolkapäät",
+"focus_Squat · Hinge · Glutes · Calves":"Kyykky · Lantio · Pakarat · Pohkeet",
+"focus_Compound Push/Pull · Arms":"Yhdistelmäliikkeet · Kädet",
+"focus_DB Press · Flies · Delts":"KP punnerrus · Vipunostot · Olkapäät",
+"focus_Rows · Pulldowns · Curls":"Soudut · Ylätaljavedot · Hauiskääntö",
+"focus_Machine Squat · Glutes · Hams":"Konekyykky · Pakarat · Takareidet",
+"focus_Press · Row · Accessories":"Punnerrus · Soutu · Lisäliikkeet",
+"focus_Hinge · Unilateral · Glutes":"Lantio · Toispuoleiset · Pakarat",
+"focus_Heavy Press · Shoulders":"Raskas punnerrus · Olkapäät",
+"focus_Heavy Row · Pull-Up":"Raskas soutu · Leuanveto",
+"focus_Heavy Squat · Deadlift":"Raskas kyykky · Maastaveto",
+"focus_Strength Accessories":"Voimalisäliikkeet",
+"focus_High-Rep Chest · Delts":"Monitoisto rinta · Olkapäät",
+"focus_High-Rep Rows · Curls":"Monitoisto soudut · Hauiskääntö",
+"focus_High-Rep Quads · Glutes":"Monitoisto etureidet · Pakarat",
+"focus_Pump Push/Pull · Arms":"Pumppi punnerrus/veto · Kädet",
+"focus_Volume Hinge · Unilateral":"Volyymi lantio · Toispuoleiset",
+// Navigation
+nav_home:"Koti",nav_log:"Loki",nav_program:"Ohjelma",nav_settings:"Asetukset",
+// Home view
+home_ready:"Valmis<br>treeniin?",home_days_week:"päivää/viikko.",home_full_body:"Koko keho.",home_split:"Jaettu ohjelma.",
+home_blocks_variation:"vaihtelublokkia.",stat_sessions:"Treenit",stat_this_week:"Tällä viikolla",stat_to_swap:"Vaihtoon",
+home_up_next:"SEURAAVA",home_day:"PÄIVÄ",home_start:"ALOITA TREENI →",
+home_block_swap_in:"BLOKKI VAIHTUU",home_session:"TREENIN",home_sessions:"TREENIN",
+home_coming_up:"Seuraavaksi:",home_sessions_left:"treeniä jäljellä",home_session_left:"treeni jäljellä",
+home_next:"SEURAAVA",home_all_days:"Kaikki päivät —",
+// Workout view
+workout_sets_done:"SARJAA TEHTY",workout_finish:"✓ LOPETA TREENI",workout_complete_all:"Tee kaikki sarjat lopettaaksesi",
+workout_quit:"Lopeta kesken",workout_rest:"LEPO",workout_skip:"OHITA",workout_load:"↑ NOSTA",
+workout_swap:"⇄ Vaihda",workout_sets:"sarjaa",workout_reps:"toistoa",workout_last:"Edellinen:",workout_try:"→ kokeile",
+workout_col_reps:"Toistot ↕",workout_col_set:"#",workout_col_kg:"kg",
+workout_hint_edit:"Tuplanapauta 💪🏻 muokataksesi sarjaa",workout_swap_title:"Vaihda liike",
+workout_muscle:"Lihasryhmä:",workout_current:"nykyinen",workout_in_use:"käytössä",workout_cancel:"Peruuta treeni?",
+// Complete view
+complete_done:"VALMIS!",complete_min:"min",stat_duration:"Kesto",stat_exercises:"Liikkeet",
+stat_volume:"kg Vol.",complete_switch:"Blokki vaihtui!",complete_now_starting:"Aloitetaan nyt",
+complete_up_next:"Seuraava",complete_back:"← TAKAISIN",
+// History view
+history_title:"Historia",history_empty:"Ei treenejä vielä. Aloita tänään! 💪",
+history_ex:"liikettä",history_vol:"vol.",history_partial:"kesken",
+// Program view
+program_title:"Ohjelma",program_full_body:"KOKO KEHO",program_split:"JAETTU",
+program_per_week:"×/VIIKKO",program_blocks:"BLOKKIA",
+program_desc_1:"treeniblokkia, jotka vaihtuvat automaattisesti joka",program_desc_2:"treenin jälkeen.",
+program_desc_swap:"Napauta ⇄ Vaihda treenin aikana vaihtaaksesi liikettä.",
+program_sessions_until:"treeniä jäljellä blokkiin",program_session_until:"treeni jäljellä blokkiin",program_active:"Aktiivinen",
+// Settings view
+settings_title:"Asetukset",settings_language:"Kieli",settings_rest:"Lepoajastin",
+settings_rest_desc:"Aika sarjojen välissä",settings_rest_off:"Pois",settings_setup:"Profiilisi",
+settings_per_week:"kertaa viikossa",settings_female:"Nainen",settings_male:"Mies",
+settings_full_body:"Koko keho",settings_split:"Jaettu",settings_program:"ohjelma",
+settings_change:"VAIHDA",settings_how_to:"Käyttöohje",settings_data:"Tiedot",
+settings_reset:"Nollaa kaikki tiedot",settings_reset_warn:"Poistaa kaiken historian, painot ja asetukset. Ei voi peruuttaa.",
+settings_how_1:"Napauta toistomäärää",settings_how_1b:"selataksesi toistoaluetta (alkaa ylhäältä, laskee alas).",
+settings_how_2:"Syötä paino kiloina",settings_how_2b:"— yhden sarjan täyttäminen täyttää automaattisesti seuraavat sarjat.",
+settings_how_3:"Napauta ✓",settings_how_3b:"merkitäksesi sarjan tehdyksi. Lepoajastin käynnistyy automaattisesti.",
+settings_how_4:"Tuplanapauta 💪🏻",settings_how_4b:"muokataksesi tehtyä sarjaa.",
+settings_how_5:"⇄ Vaihda",settings_how_5b:"vaihtaa liikkeen toiseen samasta lihasryhmästä.",
+settings_how_6:"↑ NOSTA",settings_how_6b:"tarkoittaa, että teit maksimireppit viimeksi — kokeile 2.5% lisäpainoa.",
+settings_how_7:"Lopeta kesken",settings_how_7b:"tallentaa tehdyt sarjat historiaan.",
+// Onboarding view
+ob_tagline:"Sinun salisi. Sinun sääntösi.",ob_subtitle:"Aseta treeniohjelma kahdella napautuksella.",
+ob_freq:"Montako päivää viikossa?",ob_iam:"Olen",ob_full_body:"Koko keho",ob_upper_lower:"Ylä/ala",
+ob_ppl:"PPL + Y/A",ob_male:"Mies",ob_female:"Nainen",ob_start:"ALOITETAAN →",
+ob_change_later:"Voit muuttaa tämän milloin tahansa Ohjelma-välilehdellä.",
+// Quit modal
+quit_title:"Lopeta treeni?",quit_save_info:"Tehdyt sarjat tallennetaan historiaasi.",
+quit_confirm:"JOO, LOPETAN",quit_keep:"JATKAN 💪",
+// Confirm dialogs
+confirm_reset_profile:"Nollaa profiilisi? Treenihistoria ja painot säilyvät, mutta ohjelma luodaan uudelleen.",
+confirm_clear_1:"Tämä poistaa pysyvästi KAIKEN treenihistorian, tallennetut painot ja asetukset. Oletko varma?",
+confirm_clear_2:"Oikeasti? Tätä ei voi peruuttaa.",
+// Block label
+block_label:"Blokki",
+}
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// PROGRAM GENERATOR — builds blocks based on profile (freq + sex)
+// ═══════════════════════════════════════════════════════════════════
+
+// Helper: pick from library by id
+function _libFind(id){
+  for(const g of Object.values(LIBRARY)){const x=g.find(e=>e.id===id);if(x)return x;}
+  return null;
+}
+// Auto-detect muscle group from library
+function _muscleOf(libId){
+  for(const[g,arr]of Object.entries(LIBRARY)){if(arr.find(e=>e.id===libId))return g;}
+  return"";
+}
+// Build exercise entry: Ex(blockNumber, libraryId, optionalOverrides)
+function Ex(bn,libId,ov){
+  const base=_libFind(libId);if(!base)return null;
+  const o=ov||{};
+  return{id:`b${bn}_${libId.replace('lib_','')}`,libId:libId,name:base.name,muscle:_muscleOf(libId),
+    sets:o.sets!==undefined?o.sets:base.sets,repRange:o.repRange||base.repRange,cues:o.cues||base.cues};
+}
+
+function generateBlocks(profile){
+  const f=profile.freq;  // 2-5
+  const isFemale=profile.sex==="female";
+
+  if(f===2) return gen2Day(isFemale);
+  if(f===3) return gen3Day(isFemale);
+  if(f===4) return gen4Day(isFemale);
+  return gen5Day(isFemale);
+}
+
+function gen2Day(fem){
+  // 2 days/week: Full Body A & B, higher volume per session, 4 blocks
+  const blocks=[];
+  const themes=["Barbell Compounds","Dumbbell & Machine","Strength Focus","Volume & Isolation"];
+  const dayLabels=[{id:"A",label:"Full Body A",emoji:"💪"},{id:"B",label:"Full Body B",emoji:"⚡"}];
+
+  // Block 1: Barbell Compounds
+  blocks.push({id:1,label:"Block 1",theme:themes[0],days:[
+    {id:"A",label:"Full Body A",focus:"Squat · Push · Pull · Arms",emoji:"💪",exercises:fem?[
+      Ex(1,"lib_squat"),Ex(1,"lib_hip_thrust",{sets:4}),Ex(1,"lib_bench",{sets:3}),Ex(1,"lib_cable_row",{sets:4}),
+      Ex(1,"lib_rdl"),Ex(1,"lib_lat_pull"),Ex(1,"lib_lat_raise"),Ex(1,"lib_abduction"),Ex(1,"lib_bb_curl")
+    ]:[
+      Ex(1,"lib_squat"),Ex(1,"lib_bench"),Ex(1,"lib_cable_row",{sets:4}),Ex(1,"lib_incline_db"),
+      Ex(1,"lib_lat_pull"),Ex(1,"lib_rdl"),Ex(1,"lib_lat_raise"),Ex(1,"lib_bb_curl"),Ex(1,"lib_skull")
+    ]},
+    {id:"B",label:"Full Body B",focus:"Hinge · Press · Row · Glutes",emoji:"⚡",exercises:fem?[
+      Ex(1,"lib_deadlift"),Ex(1,"lib_leg_press"),Ex(1,"lib_db_ohp"),Ex(1,"lib_db_row",{sets:4}),
+      Ex(1,"lib_leg_curl"),Ex(1,"lib_cable_fly"),Ex(1,"lib_glute_bridge"),Ex(1,"lib_face_pull"),Ex(1,"lib_standing_calf")
+    ]:[
+      Ex(1,"lib_deadlift"),Ex(1,"lib_ohp"),Ex(1,"lib_db_row",{sets:4}),Ex(1,"lib_leg_press"),
+      Ex(1,"lib_cable_fly"),Ex(1,"lib_face_pull"),Ex(1,"lib_skull"),Ex(1,"lib_hammer"),Ex(1,"lib_standing_calf")
+    ]}
+  ]});
+
+  // Block 2: Dumbbell & Machine
+  blocks.push({id:2,label:"Block 2",theme:themes[1],days:[
+    {id:"A",label:"Full Body A",focus:"Machine Legs · DB Push · Pull",emoji:"💪",exercises:fem?[
+      Ex(2,"lib_hack_squat"),Ex(2,"lib_hip_thrust",{sets:4}),Ex(2,"lib_db_bench"),Ex(2,"lib_chest_row",{sets:4}),
+      Ex(2,"lib_seated_curl"),Ex(2,"lib_pec_deck"),Ex(2,"lib_cable_raise"),Ex(2,"lib_cable_kickback"),Ex(2,"lib_seated_calf")
+    ]:[
+      Ex(2,"lib_hack_squat"),Ex(2,"lib_db_bench"),Ex(2,"lib_chest_row",{sets:4}),Ex(2,"lib_pec_deck"),
+      Ex(2,"lib_pullover_cable"),Ex(2,"lib_seated_curl"),Ex(2,"lib_cable_raise"),Ex(2,"lib_incline_curl"),Ex(2,"lib_pushdown")
+    ]},
+    {id:"B",label:"Full Body B",focus:"Hinge · Shoulders · Back · Iso",emoji:"⚡",exercises:fem?[
+      Ex(2,"lib_trap_dl"),Ex(2,"lib_leg_press"),Ex(2,"lib_db_ohp"),Ex(2,"lib_sa_cable_row",{sets:4}),
+      Ex(2,"lib_leg_ext"),Ex(2,"lib_db_pullover"),Ex(2,"lib_rear_delt"),Ex(2,"lib_abduction"),Ex(2,"lib_leg_press_calf")
+    ]:[
+      Ex(2,"lib_trap_dl"),Ex(2,"lib_db_ohp"),Ex(2,"lib_sa_cable_row",{sets:4}),Ex(2,"lib_leg_press"),
+      Ex(2,"lib_db_pullover"),Ex(2,"lib_rear_delt"),Ex(2,"lib_pushdown"),Ex(2,"lib_spider_curl"),Ex(2,"lib_seated_calf")
+    ]}
+  ]});
+
+  // Block 3: Strength
+  blocks.push({id:3,label:"Block 3",theme:themes[2],days:[
+    {id:"A",label:"Full Body A",focus:"Heavy Squat · Bench · Row",emoji:"💪",exercises:fem?[
+      Ex(3,"lib_squat",{sets:4,repRange:[4,8]}),Ex(3,"lib_hip_thrust",{sets:4,repRange:[6,10]}),Ex(3,"lib_bench",{sets:4,repRange:[6,8]}),
+      Ex(3,"lib_bb_row",{sets:4,repRange:[6,8]}),Ex(3,"lib_leg_curl"),Ex(3,"lib_lat_raise"),Ex(3,"lib_cable_kickback"),Ex(3,"lib_standing_calf",{sets:4})
+    ]:[
+      Ex(3,"lib_squat",{sets:5,repRange:[4,6]}),Ex(3,"lib_bench",{sets:5,repRange:[4,6]}),Ex(3,"lib_bb_row",{sets:4,repRange:[6,8]}),
+      Ex(3,"lib_dips",{sets:3,repRange:[6,10]}),Ex(3,"lib_pullup"),Ex(3,"lib_lat_raise"),Ex(3,"lib_cable_curl"),Ex(3,"lib_standing_calf",{sets:4})
+    ]},
+    {id:"B",label:"Full Body B",focus:"Heavy Hinge · OHP · Pull",emoji:"⚡",exercises:fem?[
+      Ex(3,"lib_deadlift",{sets:4,repRange:[3,6]}),Ex(3,"lib_leg_press",{sets:3,repRange:[8,12]}),Ex(3,"lib_db_ohp",{sets:4}),
+      Ex(3,"lib_chest_row",{sets:4}),Ex(3,"lib_leg_ext"),Ex(3,"lib_face_pull"),Ex(3,"lib_abduction"),Ex(3,"lib_seated_calf",{sets:4})
+    ]:[
+      Ex(3,"lib_deadlift",{sets:5,repRange:[3,5]}),Ex(3,"lib_ohp",{sets:5,repRange:[4,6]}),Ex(3,"lib_tbar_row",{sets:4,repRange:[6,8]}),
+      Ex(3,"lib_leg_press",{sets:3,repRange:[8,12]}),Ex(3,"lib_incline_db"),Ex(3,"lib_face_pull"),Ex(3,"lib_close_bench"),Ex(3,"lib_hammer")
+    ]}
+  ]});
+
+  // Block 4: Volume
+  blocks.push({id:4,label:"Block 4",theme:themes[3],days:[
+    {id:"A",label:"Full Body A",focus:"High-Rep Legs · Push · Pull",emoji:"💪",exercises:fem?[
+      Ex(4,"lib_goblet_squat"),Ex(4,"lib_hip_thrust",{sets:4,repRange:[12,15]}),Ex(4,"lib_db_bench",{sets:3,repRange:[12,15]}),
+      Ex(4,"lib_cable_row",{sets:4,repRange:[12,15]}),Ex(4,"lib_leg_ext",{sets:4}),Ex(4,"lib_arnold_press"),Ex(4,"lib_cable_kickback"),Ex(4,"lib_leg_press_calf")
+    ]:[
+      Ex(4,"lib_goblet_squat"),Ex(4,"lib_db_bench",{sets:4,repRange:[10,15]}),Ex(4,"lib_cable_row",{sets:4,repRange:[10,15]}),
+      Ex(4,"lib_cable_fly"),Ex(4,"lib_lat_pull",{repRange:[12,15]}),Ex(4,"lib_arnold_press"),Ex(4,"lib_conc_curl"),Ex(4,"lib_overhead_tri")
+    ]},
+    {id:"B",label:"Full Body B",focus:"High-Rep Hinge · Shoulders · Arms",emoji:"⚡",exercises:fem?[
+      Ex(4,"lib_rdl",{sets:4,repRange:[10,15]}),Ex(4,"lib_leg_press",{repRange:[15,20]}),Ex(4,"lib_db_ohp",{repRange:[10,15]}),
+      Ex(4,"lib_db_row",{sets:4,repRange:[10,15]}),Ex(4,"lib_seated_curl"),Ex(4,"lib_cable_raise",{sets:4}),Ex(4,"lib_glute_bridge"),Ex(4,"lib_seated_calf",{sets:4})
+    ]:[
+      Ex(4,"lib_rdl",{sets:4,repRange:[10,15]}),Ex(4,"lib_db_ohp",{repRange:[10,15]}),Ex(4,"lib_db_row",{sets:4,repRange:[10,15]}),
+      Ex(4,"lib_leg_press",{repRange:[15,20]}),Ex(4,"lib_pec_deck"),Ex(4,"lib_cable_raise",{sets:4}),Ex(4,"lib_reverse_curl"),Ex(4,"lib_overhead_tri")
+    ]}
+  ]});
+
+  return blocks;
+}
+
+function gen3Day(fem){
+  // 3 days/week: Full Body A/B/C — the classic layout
+  const blocks=[];
+
+  // Block 1: Barbell Compounds
+  blocks.push({id:1,label:"Block 1",theme:"Barbell Compounds",days:[
+    {id:"A",label:"Full Body A",focus:"Squat · Push · Pull",emoji:"💪",exercises:fem?[
+      Ex(1,"lib_squat"),Ex(1,"lib_hip_thrust",{sets:4}),Ex(1,"lib_bench",{sets:3}),Ex(1,"lib_cable_row",{sets:4}),
+      Ex(1,"lib_lat_pull"),Ex(1,"lib_lat_raise"),Ex(1,"lib_bb_curl")
+    ]:[
+      Ex(1,"lib_squat"),Ex(1,"lib_bench"),Ex(1,"lib_cable_row",{sets:4}),Ex(1,"lib_incline_db"),
+      Ex(1,"lib_lat_pull"),Ex(1,"lib_lat_raise"),Ex(1,"lib_bb_curl")
+    ]},
+    {id:"B",label:"Full Body B",focus:"Hinge · Vertical Push · Triceps",emoji:"⚡",exercises:fem?[
+      Ex(1,"lib_deadlift"),Ex(1,"lib_ohp",{sets:3}),Ex(1,"lib_db_row",{sets:4}),Ex(1,"lib_leg_press"),
+      Ex(1,"lib_cable_fly",{sets:3}),Ex(1,"lib_face_pull"),Ex(1,"lib_cable_kickback")
+    ]:[
+      Ex(1,"lib_deadlift"),Ex(1,"lib_ohp"),Ex(1,"lib_db_row",{sets:4}),Ex(1,"lib_leg_press"),
+      Ex(1,"lib_cable_fly"),Ex(1,"lib_face_pull"),Ex(1,"lib_skull")
+    ]},
+    {id:"C",label:"Full Body C",focus:"Unilateral · Arms · Glutes",emoji:"🔱",exercises:fem?[
+      Ex(1,"lib_split_squat"),Ex(1,"lib_rdl"),Ex(1,"lib_leg_curl"),Ex(1,"lib_leg_ext"),
+      Ex(1,"lib_glute_bridge"),Ex(1,"lib_abduction"),Ex(1,"lib_standing_calf",{sets:4})
+    ]:[
+      Ex(1,"lib_split_squat"),Ex(1,"lib_rdl"),Ex(1,"lib_leg_curl"),Ex(1,"lib_leg_ext"),
+      Ex(1,"lib_hammer"),Ex(1,"lib_hip_thrust"),Ex(1,"lib_standing_calf",{sets:4})
+    ]}
+  ]});
+
+  // Block 2: Dumbbell & Machine
+  blocks.push({id:2,label:"Block 2",theme:"Dumbbell & Machine",days:[
+    {id:"A",label:"Full Body A",focus:"Squat · Push · Pull",emoji:"💪",exercises:fem?[
+      Ex(2,"lib_hack_squat"),Ex(2,"lib_hip_thrust",{sets:4}),Ex(2,"lib_db_bench",{sets:3}),Ex(2,"lib_chest_row",{sets:4}),
+      Ex(2,"lib_pullover_cable"),Ex(2,"lib_cable_raise"),Ex(2,"lib_incline_curl")
+    ]:[
+      Ex(2,"lib_hack_squat"),Ex(2,"lib_db_bench"),Ex(2,"lib_chest_row",{sets:4}),Ex(2,"lib_pec_deck"),
+      Ex(2,"lib_pullover_cable"),Ex(2,"lib_cable_raise"),Ex(2,"lib_incline_curl")
+    ]},
+    {id:"B",label:"Full Body B",focus:"Hinge · Vertical Push · Triceps",emoji:"⚡",exercises:fem?[
+      Ex(2,"lib_trap_dl"),Ex(2,"lib_db_ohp"),Ex(2,"lib_sa_cable_row",{sets:4}),Ex(2,"lib_leg_press_n"),
+      Ex(2,"lib_db_pullover"),Ex(2,"lib_rear_delt"),Ex(2,"lib_cable_kickback")
+    ]:[
+      Ex(2,"lib_trap_dl"),Ex(2,"lib_db_ohp"),Ex(2,"lib_sa_cable_row",{sets:4}),Ex(2,"lib_leg_press_n"),
+      Ex(2,"lib_db_pullover"),Ex(2,"lib_rear_delt"),Ex(2,"lib_pushdown")
+    ]},
+    {id:"C",label:"Full Body C",focus:"Unilateral · Arms · Glutes",emoji:"🔱",exercises:fem?[
+      Ex(2,"lib_lunge"),Ex(2,"lib_nordic"),Ex(2,"lib_seated_curl"),Ex(2,"lib_leg_ext"),
+      Ex(2,"lib_glute_bridge"),Ex(2,"lib_abduction"),Ex(2,"lib_seated_calf",{sets:4})
+    ]:[
+      Ex(2,"lib_lunge"),Ex(2,"lib_nordic"),Ex(2,"lib_seated_curl"),Ex(2,"lib_leg_ext"),
+      Ex(2,"lib_spider_curl"),Ex(2,"lib_glute_bridge"),Ex(2,"lib_seated_calf",{sets:4})
+    ]}
+  ]});
+
+  // Block 3: Power & Strength
+  blocks.push({id:3,label:"Block 3",theme:"Power & Strength",days:[
+    {id:"A",label:"Full Body A",focus:"Heavy Squat · Push · Pull",emoji:"💪",exercises:fem?[
+      Ex(3,"lib_squat",{sets:4,repRange:[4,8]}),Ex(3,"lib_hip_thrust",{sets:4,repRange:[6,10]}),Ex(3,"lib_bench",{sets:4,repRange:[6,8]}),
+      Ex(3,"lib_bb_row",{sets:4,repRange:[6,8]}),Ex(3,"lib_lat_pull"),Ex(3,"lib_lat_raise"),Ex(3,"lib_cable_curl")
+    ]:[
+      Ex(3,"lib_squat",{sets:5,repRange:[4,6]}),Ex(3,"lib_bench",{sets:5,repRange:[4,6]}),Ex(3,"lib_bb_row",{sets:4,repRange:[6,8]}),
+      Ex(3,"lib_dips",{repRange:[6,10]}),Ex(3,"lib_pullup"),Ex(3,"lib_lat_raise"),Ex(3,"lib_cable_curl")
+    ]},
+    {id:"B",label:"Full Body B",focus:"Heavy Hinge · OHP · Row",emoji:"⚡",exercises:fem?[
+      Ex(3,"lib_deadlift",{sets:4,repRange:[3,6]}),Ex(3,"lib_db_ohp",{sets:4}),Ex(3,"lib_tbar_row",{sets:4,repRange:[6,8]}),
+      Ex(3,"lib_leg_press"),Ex(3,"lib_cable_fly"),Ex(3,"lib_face_pull"),Ex(3,"lib_cable_kickback")
+    ]:[
+      Ex(3,"lib_deadlift",{sets:5,repRange:[3,5]}),Ex(3,"lib_ohp",{sets:5,repRange:[4,6]}),Ex(3,"lib_tbar_row",{sets:4,repRange:[6,8]}),
+      Ex(3,"lib_leg_press"),Ex(3,"lib_incline_db",{repRange:[8,10]}),Ex(3,"lib_face_pull"),Ex(3,"lib_close_bench")
+    ]},
+    {id:"C",label:"Full Body C",focus:"Unilateral · Strength · Glutes",emoji:"🔱",exercises:fem?[
+      Ex(3,"lib_split_squat",{sets:4,repRange:[6,10]}),Ex(3,"lib_sumo_dl",{sets:4}),Ex(3,"lib_leg_curl"),
+      Ex(3,"lib_step_up"),Ex(3,"lib_hip_thrust",{sets:4,repRange:[8,12]}),Ex(3,"lib_abduction"),Ex(3,"lib_standing_calf",{sets:4})
+    ]:[
+      Ex(3,"lib_split_squat",{sets:4,repRange:[6,10]}),Ex(3,"lib_sumo_dl",{sets:4}),Ex(3,"lib_leg_curl"),
+      Ex(3,"lib_step_up"),Ex(3,"lib_hammer",{repRange:[8,12]}),Ex(3,"lib_hip_thrust",{sets:4}),Ex(3,"lib_standing_calf",{sets:4})
+    ]}
+  ]});
+
+  // Block 4: Isolation & Volume
+  blocks.push({id:4,label:"Block 4",theme:"Isolation & Volume",days:[
+    {id:"A",label:"Full Body A",focus:"High-Rep Squat · Push · Pull",emoji:"💪",exercises:fem?[
+      Ex(4,"lib_goblet_squat"),Ex(4,"lib_hip_thrust",{sets:4,repRange:[12,15]}),Ex(4,"lib_db_bench",{sets:3,repRange:[10,15]}),
+      Ex(4,"lib_cable_row",{sets:4,repRange:[10,15]}),Ex(4,"lib_lat_pull",{repRange:[12,15]}),Ex(4,"lib_arnold_press"),Ex(4,"lib_cable_kickback")
+    ]:[
+      Ex(4,"lib_goblet_squat"),Ex(4,"lib_db_bench",{repRange:[10,15]}),Ex(4,"lib_cable_row",{sets:4,repRange:[10,15]}),
+      Ex(4,"lib_cable_fly"),Ex(4,"lib_lat_pull",{repRange:[12,15]}),Ex(4,"lib_arnold_press"),Ex(4,"lib_conc_curl")
+    ]},
+    {id:"B",label:"Full Body B",focus:"High-Rep Hinge · Shoulders · Arms",emoji:"⚡",exercises:fem?[
+      Ex(4,"lib_rdl",{sets:4,repRange:[10,15]}),Ex(4,"lib_leg_press",{repRange:[15,20]}),Ex(4,"lib_db_ohp",{repRange:[10,15]}),
+      Ex(4,"lib_db_row",{sets:4,repRange:[10,15]}),Ex(4,"lib_cable_raise",{sets:4}),Ex(4,"lib_glute_bridge",{repRange:[15,20]}),Ex(4,"lib_seated_calf",{sets:4})
+    ]:[
+      Ex(4,"lib_rdl",{sets:4,repRange:[10,15]}),Ex(4,"lib_db_ohp",{repRange:[10,15]}),Ex(4,"lib_db_row",{sets:4,repRange:[10,15]}),
+      Ex(4,"lib_leg_press",{repRange:[15,20]}),Ex(4,"lib_pec_deck"),Ex(4,"lib_cable_raise",{sets:4}),Ex(4,"lib_overhead_tri")
+    ]},
+    {id:"C",label:"Full Body C",focus:"Unilateral · Pump · Glutes",emoji:"🔱",exercises:fem?[
+      Ex(4,"lib_lunge",{repRange:[12,16]}),Ex(4,"lib_good_morning"),Ex(4,"lib_seated_curl",{sets:4}),Ex(4,"lib_leg_ext",{sets:4,repRange:[15,20]}),
+      Ex(4,"lib_abduction"),Ex(4,"lib_cable_kickback"),Ex(4,"lib_seated_calf",{sets:4})
+    ]:[
+      Ex(4,"lib_lunge",{repRange:[12,16]}),Ex(4,"lib_good_morning"),Ex(4,"lib_seated_curl",{sets:4}),Ex(4,"lib_leg_ext",{sets:4,repRange:[15,20]}),
+      Ex(4,"lib_reverse_curl"),Ex(4,"lib_hip_thrust"),Ex(4,"lib_seated_calf",{sets:4})
+    ]}
+  ]});
+
+  // Block 5: Cable & Unilateral
+  blocks.push({id:5,label:"Block 5",theme:"Cable & Unilateral",days:[
+    {id:"A",label:"Full Body A",focus:"Unilateral Squat · Cable Push/Pull",emoji:"💪",exercises:fem?[
+      Ex(5,"lib_split_squat",{sets:4}),Ex(5,"lib_hip_thrust",{sets:4}),Ex(5,"lib_cable_fly",{sets:4}),Ex(5,"lib_sa_cable_row",{sets:4}),
+      Ex(5,"lib_pullover_cable"),Ex(5,"lib_cable_raise",{sets:4}),Ex(5,"lib_cable_kickback")
+    ]:[
+      Ex(5,"lib_split_squat",{sets:4}),Ex(5,"lib_cable_fly",{sets:4}),Ex(5,"lib_sa_cable_row",{sets:4}),
+      Ex(5,"lib_low_cable_fly"),Ex(5,"lib_pullover_cable"),Ex(5,"lib_cable_raise",{sets:4}),Ex(5,"lib_cable_curl")
+    ]},
+    {id:"B",label:"Full Body B",focus:"Hinge · Press · Row · Triceps",emoji:"⚡",exercises:fem?[
+      Ex(5,"lib_rdl",{sets:4}),Ex(5,"lib_leg_press"),Ex(5,"lib_db_ohp"),Ex(5,"lib_tbar_row",{sets:4}),
+      Ex(5,"lib_db_pullover"),Ex(5,"lib_face_pull"),Ex(5,"lib_abduction")
+    ]:[
+      Ex(5,"lib_rdl",{sets:4}),Ex(5,"lib_db_ohp"),Ex(5,"lib_tbar_row",{sets:4}),Ex(5,"lib_leg_press"),
+      Ex(5,"lib_db_pullover"),Ex(5,"lib_face_pull"),Ex(5,"lib_pushdown")
+    ]},
+    {id:"C",label:"Full Body C",focus:"Unilateral · Pump · Calves",emoji:"🔱",exercises:fem?[
+      Ex(5,"lib_step_up"),Ex(5,"lib_good_morning"),Ex(5,"lib_leg_curl"),Ex(5,"lib_leg_ext"),
+      Ex(5,"lib_glute_bridge"),Ex(5,"lib_cable_kickback"),Ex(5,"lib_leg_press_calf")
+    ]:[
+      Ex(5,"lib_step_up"),Ex(5,"lib_good_morning"),Ex(5,"lib_leg_curl"),Ex(5,"lib_leg_ext"),
+      Ex(5,"lib_spider_curl"),Ex(5,"lib_hip_thrust"),Ex(5,"lib_leg_press_calf")
+    ]}
+  ]});
+
+  // Block 6: Hybrid Strength–Hypertrophy
+  blocks.push({id:6,label:"Block 6",theme:"Hybrid Strength–Hypertrophy",days:[
+    {id:"A",label:"Full Body A",focus:"Squat · Push · Pull",emoji:"💪",exercises:fem?[
+      Ex(6,"lib_squat",{sets:4,repRange:[6,10]}),Ex(6,"lib_hip_thrust",{sets:4,repRange:[8,12]}),Ex(6,"lib_incline_db",{sets:3}),
+      Ex(6,"lib_bb_row",{sets:4,repRange:[6,10]}),Ex(6,"lib_pec_deck"),Ex(6,"lib_arnold_press"),Ex(6,"lib_hammer")
+    ]:[
+      Ex(6,"lib_squat",{sets:4,repRange:[6,10]}),Ex(6,"lib_incline_db"),Ex(6,"lib_bb_row",{sets:4,repRange:[6,10]}),
+      Ex(6,"lib_pec_deck"),Ex(6,"lib_pullup"),Ex(6,"lib_arnold_press"),Ex(6,"lib_hammer")
+    ]},
+    {id:"B",label:"Full Body B",focus:"Hinge · OHP · Row · Triceps",emoji:"⚡",exercises:fem?[
+      Ex(6,"lib_deadlift",{sets:4,repRange:[4,6]}),Ex(6,"lib_leg_press"),Ex(6,"lib_ohp",{sets:3}),
+      Ex(6,"lib_chest_row",{sets:4}),Ex(6,"lib_cable_fly"),Ex(6,"lib_upright_row"),Ex(6,"lib_cable_kickback")
+    ]:[
+      Ex(6,"lib_deadlift",{sets:4,repRange:[4,6]}),Ex(6,"lib_ohp",{sets:4,repRange:[6,10]}),Ex(6,"lib_chest_row",{sets:4}),
+      Ex(6,"lib_hack_squat"),Ex(6,"lib_cable_fly"),Ex(6,"lib_upright_row"),Ex(6,"lib_dips_tri")
+    ]},
+    {id:"C",label:"Full Body C",focus:"Unilateral · Strength · Glutes",emoji:"🔱",exercises:fem?[
+      Ex(6,"lib_split_squat",{sets:4,repRange:[6,10]}),Ex(6,"lib_sumo_dl"),Ex(6,"lib_nordic"),Ex(6,"lib_leg_ext"),
+      Ex(6,"lib_hip_thrust",{sets:4}),Ex(6,"lib_abduction"),Ex(6,"lib_standing_calf",{sets:4})
+    ]:[
+      Ex(6,"lib_split_squat",{sets:4,repRange:[6,10]}),Ex(6,"lib_sumo_dl"),Ex(6,"lib_nordic"),Ex(6,"lib_leg_ext"),
+      Ex(6,"lib_conc_curl"),Ex(6,"lib_hip_thrust",{sets:4}),Ex(6,"lib_standing_calf",{sets:4})
+    ]}
+  ]});
+
+  return blocks;
+}
+
+function gen4Day(fem){
+  // 4 days/week: Upper/Lower split, 4 blocks
+  const blocks=[];
+
+  // Block 1
+  blocks.push({id:1,label:"Block 1",theme:"Barbell Compounds",days:[
+    {id:"A",label:"Upper A",focus:"Horizontal Push/Pull",emoji:"💪",exercises:fem?[
+      Ex(1,"lib_bench",{sets:3}),Ex(1,"lib_cable_row",{sets:4}),Ex(1,"lib_incline_db",{sets:3}),
+      Ex(1,"lib_lat_pull"),Ex(1,"lib_lat_raise"),Ex(1,"lib_face_pull"),Ex(1,"lib_bb_curl")
+    ]:[
+      Ex(1,"lib_bench"),Ex(1,"lib_cable_row",{sets:4}),Ex(1,"lib_incline_db"),
+      Ex(1,"lib_lat_pull"),Ex(1,"lib_lat_raise"),Ex(1,"lib_bb_curl"),Ex(1,"lib_skull")
+    ]},
+    {id:"B",label:"Lower A",focus:"Squat · Glutes · Hamstrings",emoji:"🦵",exercises:fem?[
+      Ex(1,"lib_squat"),Ex(1,"lib_hip_thrust",{sets:4}),Ex(1,"lib_rdl"),Ex(1,"lib_leg_ext"),
+      Ex(1,"lib_leg_curl"),Ex(1,"lib_abduction"),Ex(1,"lib_standing_calf",{sets:4})
+    ]:[
+      Ex(1,"lib_squat"),Ex(1,"lib_rdl"),Ex(1,"lib_leg_press"),Ex(1,"lib_leg_ext"),
+      Ex(1,"lib_leg_curl"),Ex(1,"lib_hip_thrust"),Ex(1,"lib_standing_calf",{sets:4})
+    ]},
+    {id:"C",label:"Upper B",focus:"Vertical Push/Pull · Arms",emoji:"⚡",exercises:fem?[
+      Ex(1,"lib_ohp",{sets:3}),Ex(1,"lib_db_row",{sets:4}),Ex(1,"lib_cable_fly"),
+      Ex(1,"lib_pullover_cable"),Ex(1,"lib_rear_delt"),Ex(1,"lib_hammer"),Ex(1,"lib_pushdown")
+    ]:[
+      Ex(1,"lib_ohp"),Ex(1,"lib_db_row",{sets:4}),Ex(1,"lib_cable_fly"),
+      Ex(1,"lib_pullover_cable"),Ex(1,"lib_rear_delt"),Ex(1,"lib_hammer"),Ex(1,"lib_pushdown")
+    ]},
+    {id:"D",label:"Lower B",focus:"Hinge · Unilateral · Calves",emoji:"🔱",exercises:fem?[
+      Ex(1,"lib_deadlift"),Ex(1,"lib_split_squat"),Ex(1,"lib_glute_bridge"),Ex(1,"lib_seated_curl"),
+      Ex(1,"lib_step_up"),Ex(1,"lib_cable_kickback"),Ex(1,"lib_seated_calf",{sets:4})
+    ]:[
+      Ex(1,"lib_deadlift"),Ex(1,"lib_split_squat"),Ex(1,"lib_leg_press"),Ex(1,"lib_seated_curl"),
+      Ex(1,"lib_step_up"),Ex(1,"lib_hip_thrust"),Ex(1,"lib_seated_calf",{sets:4})
+    ]}
+  ]});
+
+  // Block 2
+  blocks.push({id:2,label:"Block 2",theme:"Dumbbell & Machine",days:[
+    {id:"A",label:"Upper A",focus:"DB Press · Machine Row",emoji:"💪",exercises:fem?[
+      Ex(2,"lib_db_bench"),Ex(2,"lib_chest_row",{sets:4}),Ex(2,"lib_pec_deck"),
+      Ex(2,"lib_lat_pull"),Ex(2,"lib_cable_raise"),Ex(2,"lib_rear_delt"),Ex(2,"lib_incline_curl")
+    ]:[
+      Ex(2,"lib_db_bench"),Ex(2,"lib_chest_row",{sets:4}),Ex(2,"lib_pec_deck"),
+      Ex(2,"lib_lat_pull"),Ex(2,"lib_cable_raise"),Ex(2,"lib_incline_curl"),Ex(2,"lib_pushdown")
+    ]},
+    {id:"B",label:"Lower A",focus:"Machine Squat · Glutes",emoji:"🦵",exercises:fem?[
+      Ex(2,"lib_hack_squat"),Ex(2,"lib_hip_thrust",{sets:4}),Ex(2,"lib_leg_curl"),Ex(2,"lib_leg_ext"),
+      Ex(2,"lib_lunge"),Ex(2,"lib_abduction"),Ex(2,"lib_leg_press_calf")
+    ]:[
+      Ex(2,"lib_hack_squat"),Ex(2,"lib_leg_press"),Ex(2,"lib_leg_curl"),Ex(2,"lib_leg_ext"),
+      Ex(2,"lib_lunge"),Ex(2,"lib_hip_thrust"),Ex(2,"lib_leg_press_calf")
+    ]},
+    {id:"C",label:"Upper B",focus:"DB Shoulders · Cable Work",emoji:"⚡",exercises:fem?[
+      Ex(2,"lib_db_ohp"),Ex(2,"lib_sa_cable_row",{sets:4}),Ex(2,"lib_cable_fly"),
+      Ex(2,"lib_db_pullover"),Ex(2,"lib_face_pull"),Ex(2,"lib_spider_curl"),Ex(2,"lib_overhead_tri")
+    ]:[
+      Ex(2,"lib_db_ohp"),Ex(2,"lib_sa_cable_row",{sets:4}),Ex(2,"lib_cable_fly"),
+      Ex(2,"lib_db_pullover"),Ex(2,"lib_face_pull"),Ex(2,"lib_spider_curl"),Ex(2,"lib_overhead_tri")
+    ]},
+    {id:"D",label:"Lower B",focus:"Hinge · Unilateral",emoji:"🔱",exercises:fem?[
+      Ex(2,"lib_trap_dl"),Ex(2,"lib_split_squat"),Ex(2,"lib_glute_bridge"),Ex(2,"lib_seated_curl"),
+      Ex(2,"lib_nordic"),Ex(2,"lib_cable_kickback"),Ex(2,"lib_seated_calf",{sets:4})
+    ]:[
+      Ex(2,"lib_trap_dl"),Ex(2,"lib_split_squat"),Ex(2,"lib_leg_press_n"),Ex(2,"lib_seated_curl"),
+      Ex(2,"lib_nordic"),Ex(2,"lib_good_morning"),Ex(2,"lib_seated_calf",{sets:4})
+    ]}
+  ]});
+
+  // Block 3: Strength
+  blocks.push({id:3,label:"Block 3",theme:"Strength Focus",days:[
+    {id:"A",label:"Upper A",focus:"Heavy Bench · Row",emoji:"💪",exercises:fem?[
+      Ex(3,"lib_bench",{sets:4,repRange:[6,8]}),Ex(3,"lib_bb_row",{sets:4,repRange:[6,8]}),Ex(3,"lib_incline_db"),
+      Ex(3,"lib_lat_pull"),Ex(3,"lib_lat_raise"),Ex(3,"lib_face_pull"),Ex(3,"lib_cable_curl")
+    ]:[
+      Ex(3,"lib_bench",{sets:5,repRange:[4,6]}),Ex(3,"lib_bb_row",{sets:4,repRange:[6,8]}),Ex(3,"lib_dips",{repRange:[6,10]}),
+      Ex(3,"lib_pullup"),Ex(3,"lib_lat_raise"),Ex(3,"lib_cable_curl"),Ex(3,"lib_close_bench")
+    ]},
+    {id:"B",label:"Lower A",focus:"Heavy Squat · Glutes",emoji:"🦵",exercises:fem?[
+      Ex(3,"lib_squat",{sets:4,repRange:[4,8]}),Ex(3,"lib_hip_thrust",{sets:4,repRange:[6,10]}),Ex(3,"lib_leg_press"),
+      Ex(3,"lib_leg_curl"),Ex(3,"lib_leg_ext"),Ex(3,"lib_abduction"),Ex(3,"lib_standing_calf",{sets:4})
+    ]:[
+      Ex(3,"lib_squat",{sets:5,repRange:[4,6]}),Ex(3,"lib_leg_press"),Ex(3,"lib_leg_curl"),
+      Ex(3,"lib_leg_ext"),Ex(3,"lib_hip_thrust"),Ex(3,"lib_standing_calf",{sets:4})
+    ]},
+    {id:"C",label:"Upper B",focus:"Heavy OHP · Pull",emoji:"⚡",exercises:fem?[
+      Ex(3,"lib_db_ohp",{sets:4}),Ex(3,"lib_chest_row",{sets:4}),Ex(3,"lib_cable_fly"),
+      Ex(3,"lib_pullover_cable"),Ex(3,"lib_rear_delt"),Ex(3,"lib_hammer"),Ex(3,"lib_pushdown")
+    ]:[
+      Ex(3,"lib_ohp",{sets:5,repRange:[4,6]}),Ex(3,"lib_tbar_row",{sets:4,repRange:[6,8]}),Ex(3,"lib_incline_db"),
+      Ex(3,"lib_pullover_cable"),Ex(3,"lib_face_pull"),Ex(3,"lib_hammer"),Ex(3,"lib_pushdown")
+    ]},
+    {id:"D",label:"Lower B",focus:"Heavy Hinge · Unilateral",emoji:"🔱",exercises:fem?[
+      Ex(3,"lib_deadlift",{sets:4,repRange:[3,6]}),Ex(3,"lib_split_squat",{sets:4,repRange:[6,10]}),Ex(3,"lib_glute_bridge"),
+      Ex(3,"lib_nordic"),Ex(3,"lib_step_up"),Ex(3,"lib_cable_kickback"),Ex(3,"lib_seated_calf",{sets:4})
+    ]:[
+      Ex(3,"lib_deadlift",{sets:5,repRange:[3,5]}),Ex(3,"lib_split_squat",{sets:4,repRange:[6,10]}),Ex(3,"lib_sumo_dl"),
+      Ex(3,"lib_nordic"),Ex(3,"lib_step_up"),Ex(3,"lib_hip_thrust"),Ex(3,"lib_seated_calf",{sets:4})
+    ]}
+  ]});
+
+  // Block 4: Volume
+  blocks.push({id:4,label:"Block 4",theme:"Volume & Pump",days:[
+    {id:"A",label:"Upper A",focus:"Push Volume",emoji:"💪",exercises:fem?[
+      Ex(4,"lib_db_bench",{sets:3,repRange:[10,15]}),Ex(4,"lib_cable_row",{sets:4,repRange:[10,15]}),Ex(4,"lib_cable_fly"),
+      Ex(4,"lib_lat_pull",{repRange:[12,15]}),Ex(4,"lib_arnold_press"),Ex(4,"lib_rear_delt"),Ex(4,"lib_bb_curl")
+    ]:[
+      Ex(4,"lib_db_bench",{sets:4,repRange:[10,15]}),Ex(4,"lib_cable_row",{sets:4,repRange:[10,15]}),Ex(4,"lib_cable_fly"),
+      Ex(4,"lib_lat_pull",{repRange:[12,15]}),Ex(4,"lib_arnold_press"),Ex(4,"lib_conc_curl"),Ex(4,"lib_overhead_tri")
+    ]},
+    {id:"B",label:"Lower A",focus:"Quad & Glute Volume",emoji:"🦵",exercises:fem?[
+      Ex(4,"lib_goblet_squat"),Ex(4,"lib_hip_thrust",{sets:4,repRange:[12,15]}),Ex(4,"lib_rdl"),Ex(4,"lib_leg_ext",{sets:4}),
+      Ex(4,"lib_seated_curl",{sets:4}),Ex(4,"lib_abduction"),Ex(4,"lib_leg_press_calf")
+    ]:[
+      Ex(4,"lib_goblet_squat"),Ex(4,"lib_rdl"),Ex(4,"lib_leg_press",{repRange:[15,20]}),Ex(4,"lib_leg_ext",{sets:4}),
+      Ex(4,"lib_seated_curl",{sets:4}),Ex(4,"lib_hip_thrust"),Ex(4,"lib_leg_press_calf")
+    ]},
+    {id:"C",label:"Upper B",focus:"Pull Volume · Arms",emoji:"⚡",exercises:fem?[
+      Ex(4,"lib_db_ohp",{repRange:[10,15]}),Ex(4,"lib_db_row",{sets:4,repRange:[10,15]}),Ex(4,"lib_pec_deck"),
+      Ex(4,"lib_pullover_cable"),Ex(4,"lib_cable_raise",{sets:4}),Ex(4,"lib_hammer"),Ex(4,"lib_pushdown")
+    ]:[
+      Ex(4,"lib_db_ohp",{repRange:[10,15]}),Ex(4,"lib_db_row",{sets:4,repRange:[10,15]}),Ex(4,"lib_pec_deck"),
+      Ex(4,"lib_pullover_cable"),Ex(4,"lib_cable_raise",{sets:4}),Ex(4,"lib_spider_curl"),Ex(4,"lib_pushdown")
+    ]},
+    {id:"D",label:"Lower B",focus:"Hinge Volume · Unilateral",emoji:"🔱",exercises:fem?[
+      Ex(4,"lib_rdl",{sets:4,repRange:[10,15]}),Ex(4,"lib_lunge"),Ex(4,"lib_glute_bridge",{repRange:[15,20]}),
+      Ex(4,"lib_good_morning"),Ex(4,"lib_leg_curl"),Ex(4,"lib_cable_kickback"),Ex(4,"lib_seated_calf",{sets:4})
+    ]:[
+      Ex(4,"lib_rdl",{sets:4,repRange:[10,15]}),Ex(4,"lib_lunge"),Ex(4,"lib_leg_press",{repRange:[15,20]}),
+      Ex(4,"lib_good_morning"),Ex(4,"lib_leg_curl"),Ex(4,"lib_hip_thrust"),Ex(4,"lib_seated_calf",{sets:4})
+    ]}
+  ]});
+
+  return blocks;
+}
+
+function gen5Day(fem){
+  // 5 days/week: Push / Pull / Legs / Upper / Lower, 4 blocks
+  const blocks=[];
+
+  // Block 1
+  blocks.push({id:1,label:"Block 1",theme:"Barbell Foundation",days:[
+    {id:"A",label:"Push",focus:"Chest · Shoulders · Triceps",emoji:"💪",exercises:fem?[
+      Ex(1,"lib_bench",{sets:3}),Ex(1,"lib_incline_db",{sets:3}),Ex(1,"lib_ohp",{sets:3}),
+      Ex(1,"lib_cable_fly"),Ex(1,"lib_lat_raise"),Ex(1,"lib_pushdown")
+    ]:[
+      Ex(1,"lib_bench"),Ex(1,"lib_incline_db"),Ex(1,"lib_ohp",{sets:3}),
+      Ex(1,"lib_cable_fly"),Ex(1,"lib_lat_raise"),Ex(1,"lib_skull")
+    ]},
+    {id:"B",label:"Pull",focus:"Back · Biceps · Rear Delts",emoji:"⚡",exercises:fem?[
+      Ex(1,"lib_cable_row",{sets:4}),Ex(1,"lib_lat_pull"),Ex(1,"lib_db_row",{sets:3}),
+      Ex(1,"lib_face_pull"),Ex(1,"lib_rear_delt"),Ex(1,"lib_bb_curl")
+    ]:[
+      Ex(1,"lib_cable_row",{sets:4}),Ex(1,"lib_lat_pull"),Ex(1,"lib_db_row",{sets:3}),
+      Ex(1,"lib_face_pull"),Ex(1,"lib_rear_delt"),Ex(1,"lib_bb_curl"),Ex(1,"lib_hammer")
+    ]},
+    {id:"C",label:"Legs",focus:"Squat · Hinge · Glutes · Calves",emoji:"🦵",exercises:fem?[
+      Ex(1,"lib_squat"),Ex(1,"lib_hip_thrust",{sets:4}),Ex(1,"lib_rdl"),Ex(1,"lib_leg_ext"),
+      Ex(1,"lib_leg_curl"),Ex(1,"lib_abduction"),Ex(1,"lib_standing_calf",{sets:4})
+    ]:[
+      Ex(1,"lib_squat"),Ex(1,"lib_rdl"),Ex(1,"lib_leg_press"),Ex(1,"lib_leg_ext"),
+      Ex(1,"lib_leg_curl"),Ex(1,"lib_hip_thrust"),Ex(1,"lib_standing_calf",{sets:4})
+    ]},
+    {id:"D",label:"Upper",focus:"Compound Push/Pull · Arms",emoji:"🔱",exercises:fem?[
+      Ex(1,"lib_db_bench",{sets:3}),Ex(1,"lib_chest_row",{sets:4}),Ex(1,"lib_db_ohp",{sets:3}),
+      Ex(1,"lib_pullover_cable"),Ex(1,"lib_cable_raise"),Ex(1,"lib_hammer")
+    ]:[
+      Ex(1,"lib_db_bench"),Ex(1,"lib_chest_row",{sets:4}),Ex(1,"lib_db_ohp"),
+      Ex(1,"lib_pullover_cable"),Ex(1,"lib_cable_raise"),Ex(1,"lib_incline_curl"),Ex(1,"lib_pushdown")
+    ]},
+    {id:"E",label:"Lower",focus:"Hinge · Unilateral · Calves",emoji:"🏋️",exercises:fem?[
+      Ex(1,"lib_deadlift"),Ex(1,"lib_split_squat"),Ex(1,"lib_glute_bridge"),Ex(1,"lib_seated_curl"),
+      Ex(1,"lib_step_up"),Ex(1,"lib_cable_kickback"),Ex(1,"lib_seated_calf",{sets:4})
+    ]:[
+      Ex(1,"lib_deadlift"),Ex(1,"lib_split_squat"),Ex(1,"lib_leg_press"),Ex(1,"lib_seated_curl"),
+      Ex(1,"lib_step_up"),Ex(1,"lib_good_morning"),Ex(1,"lib_seated_calf",{sets:4})
+    ]}
+  ]});
+
+  // Block 2
+  blocks.push({id:2,label:"Block 2",theme:"Dumbbell & Cable",days:[
+    {id:"A",label:"Push",focus:"DB Press · Flies · Delts",emoji:"💪",exercises:fem?[
+      Ex(2,"lib_db_bench"),Ex(2,"lib_pec_deck"),Ex(2,"lib_db_ohp",{sets:3}),
+      Ex(2,"lib_cable_fly"),Ex(2,"lib_cable_raise"),Ex(2,"lib_overhead_tri")
+    ]:[
+      Ex(2,"lib_db_bench"),Ex(2,"lib_pec_deck"),Ex(2,"lib_db_ohp"),
+      Ex(2,"lib_cable_fly"),Ex(2,"lib_cable_raise"),Ex(2,"lib_pushdown"),Ex(2,"lib_overhead_tri")
+    ]},
+    {id:"B",label:"Pull",focus:"Rows · Pulldowns · Curls",emoji:"⚡",exercises:fem?[
+      Ex(2,"lib_chest_row",{sets:4}),Ex(2,"lib_sa_cable_row",{sets:3}),Ex(2,"lib_pullover_cable"),
+      Ex(2,"lib_rear_delt"),Ex(2,"lib_face_pull"),Ex(2,"lib_incline_curl")
+    ]:[
+      Ex(2,"lib_chest_row",{sets:4}),Ex(2,"lib_sa_cable_row",{sets:3}),Ex(2,"lib_pullover_cable"),
+      Ex(2,"lib_rear_delt"),Ex(2,"lib_face_pull"),Ex(2,"lib_incline_curl"),Ex(2,"lib_spider_curl")
+    ]},
+    {id:"C",label:"Legs",focus:"Machine Squat · Glutes · Hams",emoji:"🦵",exercises:fem?[
+      Ex(2,"lib_hack_squat"),Ex(2,"lib_hip_thrust",{sets:4}),Ex(2,"lib_leg_curl"),Ex(2,"lib_leg_ext"),
+      Ex(2,"lib_lunge"),Ex(2,"lib_abduction"),Ex(2,"lib_leg_press_calf")
+    ]:[
+      Ex(2,"lib_hack_squat"),Ex(2,"lib_leg_press"),Ex(2,"lib_leg_curl"),Ex(2,"lib_leg_ext"),
+      Ex(2,"lib_lunge"),Ex(2,"lib_hip_thrust"),Ex(2,"lib_leg_press_calf")
+    ]},
+    {id:"D",label:"Upper",focus:"Press · Row · Accessories",emoji:"🔱",exercises:fem?[
+      Ex(2,"lib_bench",{sets:3}),Ex(2,"lib_db_row",{sets:4}),Ex(2,"lib_arnold_press"),
+      Ex(2,"lib_lat_pull"),Ex(2,"lib_cable_fly"),Ex(2,"lib_bb_curl")
+    ]:[
+      Ex(2,"lib_bench",{sets:3}),Ex(2,"lib_db_row",{sets:4}),Ex(2,"lib_arnold_press"),
+      Ex(2,"lib_lat_pull"),Ex(2,"lib_cable_fly"),Ex(2,"lib_hammer"),Ex(2,"lib_close_bench")
+    ]},
+    {id:"E",label:"Lower",focus:"Hinge · Unilateral · Glutes",emoji:"🏋️",exercises:fem?[
+      Ex(2,"lib_trap_dl"),Ex(2,"lib_split_squat"),Ex(2,"lib_glute_bridge"),Ex(2,"lib_nordic"),
+      Ex(2,"lib_seated_curl"),Ex(2,"lib_cable_kickback"),Ex(2,"lib_seated_calf",{sets:4})
+    ]:[
+      Ex(2,"lib_trap_dl"),Ex(2,"lib_split_squat"),Ex(2,"lib_leg_press_n"),Ex(2,"lib_nordic"),
+      Ex(2,"lib_seated_curl"),Ex(2,"lib_good_morning"),Ex(2,"lib_seated_calf",{sets:4})
+    ]}
+  ]});
+
+  // Block 3: Strength
+  blocks.push({id:3,label:"Block 3",theme:"Strength Phase",days:[
+    {id:"A",label:"Push",focus:"Heavy Press · Shoulders",emoji:"💪",exercises:fem?[
+      Ex(3,"lib_bench",{sets:4,repRange:[6,8]}),Ex(3,"lib_incline_db"),Ex(3,"lib_ohp",{sets:3,repRange:[6,10]}),
+      Ex(3,"lib_cable_fly"),Ex(3,"lib_lat_raise"),Ex(3,"lib_pushdown")
+    ]:[
+      Ex(3,"lib_bench",{sets:5,repRange:[4,6]}),Ex(3,"lib_incline_db",{repRange:[8,10]}),Ex(3,"lib_ohp",{sets:3,repRange:[4,8]}),
+      Ex(3,"lib_dips",{repRange:[6,10]}),Ex(3,"lib_lat_raise"),Ex(3,"lib_close_bench")
+    ]},
+    {id:"B",label:"Pull",focus:"Heavy Row · Pull-Up",emoji:"⚡",exercises:fem?[
+      Ex(3,"lib_bb_row",{sets:4,repRange:[6,8]}),Ex(3,"lib_lat_pull"),Ex(3,"lib_chest_row",{sets:3}),
+      Ex(3,"lib_face_pull"),Ex(3,"lib_rear_delt"),Ex(3,"lib_cable_curl")
+    ]:[
+      Ex(3,"lib_bb_row",{sets:4,repRange:[6,8]}),Ex(3,"lib_pullup"),Ex(3,"lib_tbar_row",{sets:3}),
+      Ex(3,"lib_face_pull"),Ex(3,"lib_rear_delt"),Ex(3,"lib_bb_curl"),Ex(3,"lib_hammer")
+    ]},
+    {id:"C",label:"Legs",focus:"Heavy Squat · Deadlift",emoji:"🦵",exercises:fem?[
+      Ex(3,"lib_squat",{sets:4,repRange:[4,8]}),Ex(3,"lib_hip_thrust",{sets:4,repRange:[6,10]}),Ex(3,"lib_rdl"),
+      Ex(3,"lib_leg_ext"),Ex(3,"lib_leg_curl"),Ex(3,"lib_abduction"),Ex(3,"lib_standing_calf",{sets:4})
+    ]:[
+      Ex(3,"lib_squat",{sets:5,repRange:[4,6]}),Ex(3,"lib_rdl"),Ex(3,"lib_leg_press"),
+      Ex(3,"lib_leg_ext"),Ex(3,"lib_leg_curl"),Ex(3,"lib_hip_thrust"),Ex(3,"lib_standing_calf",{sets:4})
+    ]},
+    {id:"D",label:"Upper",focus:"Strength Accessories",emoji:"🔱",exercises:fem?[
+      Ex(3,"lib_db_bench"),Ex(3,"lib_sa_cable_row",{sets:4}),Ex(3,"lib_db_ohp"),
+      Ex(3,"lib_pullover_cable"),Ex(3,"lib_cable_raise"),Ex(3,"lib_hammer")
+    ]:[
+      Ex(3,"lib_db_bench"),Ex(3,"lib_sa_cable_row",{sets:4}),Ex(3,"lib_db_ohp"),
+      Ex(3,"lib_pullover_cable"),Ex(3,"lib_cable_raise"),Ex(3,"lib_incline_curl"),Ex(3,"lib_overhead_tri")
+    ]},
+    {id:"E",label:"Lower",focus:"Heavy Hinge · Unilateral",emoji:"🏋️",exercises:fem?[
+      Ex(3,"lib_deadlift",{sets:4,repRange:[3,6]}),Ex(3,"lib_split_squat",{sets:4,repRange:[6,10]}),Ex(3,"lib_glute_bridge"),
+      Ex(3,"lib_nordic"),Ex(3,"lib_step_up"),Ex(3,"lib_cable_kickback"),Ex(3,"lib_seated_calf",{sets:4})
+    ]:[
+      Ex(3,"lib_deadlift",{sets:5,repRange:[3,5]}),Ex(3,"lib_split_squat",{sets:4,repRange:[6,10]}),Ex(3,"lib_sumo_dl"),
+      Ex(3,"lib_nordic"),Ex(3,"lib_step_up"),Ex(3,"lib_good_morning"),Ex(3,"lib_seated_calf",{sets:4})
+    ]}
+  ]});
+
+  // Block 4: Volume
+  blocks.push({id:4,label:"Block 4",theme:"Volume & Pump",days:[
+    {id:"A",label:"Push",focus:"High-Rep Chest · Delts",emoji:"💪",exercises:fem?[
+      Ex(4,"lib_db_bench",{sets:3,repRange:[10,15]}),Ex(4,"lib_pec_deck"),Ex(4,"lib_arnold_press"),
+      Ex(4,"lib_cable_fly"),Ex(4,"lib_cable_raise",{sets:4}),Ex(4,"lib_overhead_tri")
+    ]:[
+      Ex(4,"lib_db_bench",{repRange:[10,15]}),Ex(4,"lib_pec_deck"),Ex(4,"lib_arnold_press"),
+      Ex(4,"lib_cable_fly"),Ex(4,"lib_cable_raise",{sets:4}),Ex(4,"lib_pushdown"),Ex(4,"lib_overhead_tri")
+    ]},
+    {id:"B",label:"Pull",focus:"High-Rep Rows · Curls",emoji:"⚡",exercises:fem?[
+      Ex(4,"lib_cable_row",{sets:4,repRange:[10,15]}),Ex(4,"lib_lat_pull",{repRange:[12,15]}),Ex(4,"lib_db_row",{sets:3,repRange:[10,15]}),
+      Ex(4,"lib_rear_delt"),Ex(4,"lib_face_pull"),Ex(4,"lib_incline_curl")
+    ]:[
+      Ex(4,"lib_cable_row",{sets:4,repRange:[10,15]}),Ex(4,"lib_lat_pull",{repRange:[12,15]}),Ex(4,"lib_db_row",{sets:3,repRange:[10,15]}),
+      Ex(4,"lib_rear_delt"),Ex(4,"lib_face_pull"),Ex(4,"lib_conc_curl"),Ex(4,"lib_spider_curl")
+    ]},
+    {id:"C",label:"Legs",focus:"High-Rep Quads · Glutes",emoji:"🦵",exercises:fem?[
+      Ex(4,"lib_goblet_squat"),Ex(4,"lib_hip_thrust",{sets:4,repRange:[12,15]}),Ex(4,"lib_rdl",{repRange:[10,15]}),
+      Ex(4,"lib_leg_ext",{sets:4,repRange:[15,20]}),Ex(4,"lib_seated_curl",{sets:4}),Ex(4,"lib_abduction"),Ex(4,"lib_leg_press_calf")
+    ]:[
+      Ex(4,"lib_goblet_squat"),Ex(4,"lib_rdl",{repRange:[10,15]}),Ex(4,"lib_leg_press",{repRange:[15,20]}),
+      Ex(4,"lib_leg_ext",{sets:4,repRange:[15,20]}),Ex(4,"lib_seated_curl",{sets:4}),Ex(4,"lib_hip_thrust"),Ex(4,"lib_leg_press_calf")
+    ]},
+    {id:"D",label:"Upper",focus:"Pump Push/Pull · Arms",emoji:"🔱",exercises:fem?[
+      Ex(4,"lib_bench",{sets:3,repRange:[10,15]}),Ex(4,"lib_chest_row",{sets:4,repRange:[10,15]}),Ex(4,"lib_db_ohp",{repRange:[10,15]}),
+      Ex(4,"lib_pullover_cable"),Ex(4,"lib_lat_raise"),Ex(4,"lib_bb_curl")
+    ]:[
+      Ex(4,"lib_bench",{sets:3,repRange:[10,15]}),Ex(4,"lib_chest_row",{sets:4,repRange:[10,15]}),Ex(4,"lib_db_ohp",{repRange:[10,15]}),
+      Ex(4,"lib_pullover_cable"),Ex(4,"lib_lat_raise"),Ex(4,"lib_hammer"),Ex(4,"lib_pushdown")
+    ]},
+    {id:"E",label:"Lower",focus:"Volume Hinge · Unilateral",emoji:"🏋️",exercises:fem?[
+      Ex(4,"lib_rdl",{sets:4,repRange:[10,15]}),Ex(4,"lib_lunge"),Ex(4,"lib_glute_bridge",{repRange:[15,20]}),
+      Ex(4,"lib_good_morning"),Ex(4,"lib_leg_curl"),Ex(4,"lib_cable_kickback"),Ex(4,"lib_seated_calf",{sets:4})
+    ]:[
+      Ex(4,"lib_rdl",{sets:4,repRange:[10,15]}),Ex(4,"lib_lunge"),Ex(4,"lib_leg_press",{repRange:[15,20]}),
+      Ex(4,"lib_good_morning"),Ex(4,"lib_leg_curl"),Ex(4,"lib_hip_thrust"),Ex(4,"lib_seated_calf",{sets:4})
+    ]}
+  ]});
+
+  return blocks;
+}
+
+// Active blocks — generated from profile or default
+let BLOCKS=[];
+function reloadBlocks(){
+  const p=getProfile();
+  if(p)BLOCKS=generateBlocks(p);
+}
+reloadBlocks();
+
+// ═══════════════════════════════════════════════════════════════════
+// STORAGE HELPERS
+// ═══════════════════════════════════════════════════════════════════
+// Sessions needed per block = frequency × 2 (roughly 2 weeks of training)
+function sessionsPerBlock(){
+  const p=getProfile();
+  return p?(p.freq*2):6;
+}
 function initAndGetBlockIdx(){
-  const completions=getTotalBlockCompletions();
-  return Math.floor(completions/2)%BLOCKS.length;
+  if(!BLOCKS.length)return 0;
+  const saved=ls.get(SK.blockIdx);
+  if(saved!==null&&saved>=0&&saved<BLOCKS.length)return saved;
+  ls.set(SK.blockIdx,0);
+  return 0;
 }
-// Returns how many exercise sessions remain until the next block swap.
-// A full block = 3 sessions (A+B+C). 2 full blocks = 6 sessions.
-// We track completions in "full-block" units, but sessions within the
-// current block-cycle are tracked via history days done.
+function getBlockSessionCount(){
+  const idx=initAndGetBlockIdx();
+  if(!BLOCKS.length)return 0;
+  const blockId=BLOCKS[idx].id;
+  // Count sessions done in current block (by matching blockId)
+  return A.history.filter(h=>h.blockId===blockId).length;
+}
 function getSessionsUntilSwap(){
-  const sessionsInCycle=getSessionsInCurrentBlockCycle();
-  return Math.max(0,6-sessionsInCycle);
+  return Math.max(0,sessionsPerBlock()-getBlockSessionCount());
 }
-// How many sessions have been logged in the current 2-completion cycle (mod 6)?
-function getSessionsInCurrentBlockCycle(){
-  const totalSessions=getHistory().length;
-  return totalSessions%totalSessionsForSwap();
-}
-function totalSessionsForSwap(){return 6;}
-// Called after each workout to check if we've completed a full block
-// and if so, bump the completion counter.
-function maybeAdvanceBlock(){
-  const nxt=getNextDayId(); // already advanced by advanceDay() before this call
-  if(nxt==="A"){
-    const c=getTotalBlockCompletions()+1;
-    ls.set(SK.blockCompletions,c);
+function advanceBlockIfNeeded(){
+  if(!BLOCKS.length)return;
+  if(getBlockSessionCount()>=sessionsPerBlock()){
+    const next=(initAndGetBlockIdx()+1)%BLOCKS.length;
+    ls.set(SK.blockIdx,next);
+    return next;
   }
+  return initAndGetBlockIdx();
 }
 function getNextDayId(){return ls.get(SK.nextDay)||"A";}
 function getHistory(){return ls.get(SK.history)||[];}
 function getLastWeight(id){return(ls.get(SK.weights)||{})[id]||null;}
-function saveWeight(id,w){const ws=ls.get(SK.weights)||{};ws[id]=w;ls.set(SK.weights,ws);}
-function advanceDay(cur){const o=["A","B","C"];ls.set(SK.nextDay,o[(o.indexOf(cur)+1)%3]);}
-function getExerciseHistory(id){
-  return getHistory().map(s=>s.exercises&&s.exercises.find(e=>e.id===id)).filter(Boolean).slice(-5);
+function saveWeight(id,w,libId){const ws=ls.get(SK.weights)||{};ws[id]=w;if(libId)ws[libId]=w;ls.set(SK.weights,ws);}
+function advanceDay(cur){
+  const p=getProfile();
+  const dayIds=BLOCKS.length>0?BLOCKS[0].days.map(d=>d.id):["A","B","C"];
+  const idx=dayIds.indexOf(cur);
+  ls.set(SK.nextDay,dayIds[(idx+1)%dayIds.length]);
 }
-function shouldIncrease(id,topRep){
-  const h=getExerciseHistory(id);
+function getExerciseHistory(id,libId){
+  return getHistory().map(s=>s.exercises&&s.exercises.find(e=>e.id===id||(libId&&e.libId===libId))).filter(Boolean).slice(-5);
+}
+function shouldIncrease(id,topRep,libId){
+  const h=getExerciseHistory(id,libId);
   return h.length>0&&h[h.length-1].sets.every(s=>parseInt(s.reps)>=topRep);
 }
 function isThisISOWeek(dateStr){
@@ -718,11 +1346,9 @@ function isThisISOWeek(dateStr){
   mon.setHours(0,0,0,0);
   return d>=mon;
 }
-function exName(name){return t(name)||name;}
-function muscleName(m){const k='m_'+m.toLowerCase();return t(k)||m;}
 function fmtTime(s){return`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;}
-function fmtDate(iso){const loc=getLang()==='fi'?'fi-FI':'en-GB';return new Date(iso).toLocaleDateString(loc,{day:"numeric",month:"short"});}
-function today(){const loc=getLang()==='fi'?'fi-FI':'en-GB';return new Date().toLocaleDateString(loc,{weekday:"short",day:"numeric",month:"short"});}
+function fmtDate(iso){return new Date(iso).toLocaleDateString(getLang()==='fi'?'fi-FI':'en-GB',{day:'numeric',month:'short'});}
+function today(){return new Date().toLocaleDateString(getLang()==='fi'?'fi-FI':'en-GB',{weekday:'short',day:'numeric',month:'short'});}
 
 // ═══════════════════════════════════════════════════════════════════
 // APP STATE  (single mutable object — we call render() after changes)
@@ -743,8 +1369,7 @@ const A={
   swapTarget:null,
   // Internal timers
   _elapsedInterval:null,
-  _restInterval:null,
-  _restEnd:null,
+  _restTimeout:null,
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -755,53 +1380,38 @@ function startElapsed(){
   A._elapsedInterval=setInterval(()=>{
     A.elapsed=Math.floor((Date.now()-A.sessionStart)/1000);
     const el=document.getElementById('elapsed-txt');
-    if(el)el.textContent=`${BLOCKS[A.blockIdx].label} · ${t('nav_log')} ${A.activeDayId} · ${fmtTime(A.elapsed)}`;
+    if(el)el.textContent=`${t('block_label')} ${BLOCKS[A.blockIdx].id} · ${t('home_day')} ${A.activeDayId} · ${fmtTime(A.elapsed)}`;
   },1000);
 }
 function stopElapsed(){clearInterval(A._elapsedInterval);A.elapsed=0;}
 
 function startRest(secs){
-  clearTimeout(A._restInterval);
-  A._restEnd=Date.now()+secs*1000;
+  if(!secs)return;
+  clearTimeout(A._restTimeout);
   A.restTimer=secs;
   tickRest();
 }
 function tickRest(){
-  const remaining=A._restEnd?Math.ceil((A._restEnd-Date.now())/1000):0;
-  if(remaining>0){
-    A.restTimer=remaining;
-    refreshRestBar();
-    A._restInterval=setTimeout(tickRest,500); // poll every 500ms — survives throttling
+  refreshRestBar();
+  if(A.restTimer>0){
+    A._restTimeout=setTimeout(()=>{A.restTimer--;tickRest();},1000);
   }else{
     A.restTimer=null;
-    A._restEnd=null;
     refreshRestBar();
   }
 }
-function skipRest(){
-  clearTimeout(A._restInterval);
-  A.restTimer=null;
-  A._restEnd=null;
-  refreshRestBar();
-}
+function skipRest(){clearTimeout(A._restTimeout);A.restTimer=null;refreshRestBar();}
 function refreshRestBar(){
   const bar=document.getElementById('rest-bar');
   if(!bar)return;
   if(A.restTimer!==null&&A.restTimer>0){
     bar.classList.add('visible');
-    const timeEl=bar.querySelector('#rest-time');
-    if(timeEl)timeEl.textContent=`${getLang()==='fi'?'LEPO':'REST'} · ${fmtTime(A.restTimer)}`;
+    const el=bar.querySelector('#rest-time');
+    if(el)el.textContent=`${t('workout_rest')} · ${fmtTime(A.restTimer)}`;
   }else{
     bar.classList.remove('visible');
   }
 }
-// When screen wakes up, re-sync the rest timer immediately
-document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible'&&A._restEnd){
-    clearTimeout(A._restInterval);
-    tickRest();
-  }
-});
 
 // ═══════════════════════════════════════════════════════════════════
 // SESSION LOGIC
@@ -809,8 +1419,8 @@ document.addEventListener('visibilitychange',()=>{
 function buildInitialSets(exercises){
   const init={};
   exercises.forEach(ex=>{
-    const lw=getLastWeight(ex.id);
-    const bump=shouldIncrease(ex.id,ex.repRange[1]);
+    const lw=getLastWeight(ex.libId)||getLastWeight(ex.id);
+    const bump=shouldIncrease(ex.id,ex.repRange[1],ex.libId);
     const w=lw?(bump?String(Math.round(lw*1.025*2)/2):String(lw)):"";
     init[ex.id]=Array.from({length:ex.sets},()=>({reps:"",weight:w,done:false,editing:false}));
   });
@@ -826,17 +1436,17 @@ function startWorkout(dayId,block){
   A.sessionStart=Date.now();
   A.elapsed=0;
   A.restTimer=null;
-  A._restEnd=null;
-  clearTimeout(A._restInterval);
+  clearTimeout(A._restTimeout);
   startElapsed();
   navigate("workout");
 }
 
 function swapExercise(oldId,newEx){
+  closeSwap();
   A.sessionExercises=A.sessionExercises.map(e=>e.id===oldId?{...newEx}:e);
   delete A.sessionSets[oldId];
-  const lw=getLastWeight(newEx.id);
-  const bump=shouldIncrease(newEx.id,newEx.repRange[1]);
+  const lw=getLastWeight(newEx.libId)||getLastWeight(newEx.id);
+  const bump=shouldIncrease(newEx.id,newEx.repRange[1],newEx.libId);
   const w=lw?(bump?String(Math.round(lw*1.025*2)/2):String(lw)):"";
   A.sessionSets[newEx.id]=Array.from({length:newEx.sets},()=>({reps:"",weight:w,done:false,editing:false}));
   A.swapTarget=null;
@@ -866,10 +1476,10 @@ function markSetDone(exId,idx){
   const sets=A.sessionSets[exId];
   if(!sets||!sets[idx].reps)return;
   const w=parseFloat(sets[idx].weight);
+  const ex=A.sessionExercises.find(e=>e.id===exId);
   sets[idx]={...sets[idx],done:true,editing:false};
-  if(!isNaN(w)&&w>0)saveWeight(exId,w);
-  const cfg=getSettings();
-  if(cfg.restEnabled)startRest(cfg.restSecs);
+  if(!isNaN(w)&&w>0)saveWeight(exId,w,ex&&ex.libId);
+  startRest(getRestDuration());
   renderSetRow(exId,idx);
   updateProgress();
   updateFinishBtn();
@@ -885,7 +1495,8 @@ function saveEdit(exId,idx){
   const set=A.sessionSets[exId][idx];
   if(!set.reps)return;
   const w=parseFloat(set.weight);
-  if(!isNaN(w)&&w>0)saveWeight(exId,w);
+  const ex=A.sessionExercises.find(e=>e.id===exId);
+  if(!isNaN(w)&&w>0)saveWeight(exId,w,ex&&ex.libId);
   A.sessionSets[exId][idx]={...set,done:true,editing:false};
   renderSetRow(exId,idx);
   updateProgress();
@@ -893,19 +1504,21 @@ function saveEdit(exId,idx){
 }
 
 function updateKg(exId,idx,val){
-  A.sessionSets[exId][idx]={...A.sessionSets[exId][idx],weight:val};
-  // Propagate forward to all subsequent undone sets
-  A.sessionSets[exId].forEach((s,i)=>{
-    if(i>idx&&!s.done){
-      A.sessionSets[exId][i]={...A.sessionSets[exId][i],weight:val};
+  const sets=A.sessionSets[exId];
+  if(!sets)return;
+  sets[idx]={...sets[idx],weight:val};
+  // Auto-fill forward to all subsequent undone sets
+  for(let i=idx+1;i<sets.length;i++){
+    if(!sets[i].done){
+      sets[i]={...sets[i],weight:val};
       const el=document.getElementById(`kg-inp-${exId}-${i}`);
       if(el)el.value=val;
     }
-  });
+  }
 }
 
-function finishWorkout(force){
-  if(!force&&!allDone())return;
+function finishWorkout(){
+  if(!allDone())return;
   const block=BLOCKS[A.blockIdx];
   const day=block.days.find(d=>d.id===A.activeDayId);
   const session={
@@ -915,19 +1528,18 @@ function finishWorkout(force){
     dayId:A.activeDayId,dayLabel:day.label,
     duration:Math.round((Date.now()-A.sessionStart)/60000),
     exercises:A.sessionExercises.map(ex=>({
-      id:ex.id,name:ex.name,muscle:ex.muscle,
+      id:ex.id,libId:ex.libId,name:ex.name,muscle:ex.muscle,
       sets:(A.sessionSets[ex.id]||[]).map(s=>({reps:s.reps,weight:s.weight,done:s.done}))
     }))
   };
   A.history=[...A.history,session];
   ls.set(SK.history,A.history);
   advanceDay(A.activeDayId);
-  maybeAdvanceBlock();
   stopElapsed();
-  clearTimeout(A._restInterval);
+  clearTimeout(A._restTimeout);
   A.restTimer=null;
-  A._restEnd=null;
-  A.blockIdx=initAndGetBlockIdx();
+  // Check if block should advance based on session count
+  A.blockIdx=advanceBlockIfNeeded();
   A.previewBlockIdx=A.blockIdx;
   A.activeDayId=getNextDayId();
   A.completedSession=session;
@@ -956,6 +1568,7 @@ function renderSetRow(exId,idx){
   const ex=A.sessionExercises.find(e=>e.id===exId);
   if(!ex)return;
   container.innerHTML=buildSetRowHTML(ex,idx,A.sessionSets[exId][idx]);
+  bindSetRowEvents(ex,idx);
 }
 
 function updateProgress(){
@@ -971,12 +1584,10 @@ function updateFinishBtn(){
   const done=doneSets(),total=totalSets();
   if(allDone()){
     btn.disabled=false;
-    btn.textContent=t('finish_workout');
-    const hint=document.getElementById('quitter-area');
-    if(hint)hint.style.display='none';
+    btn.textContent=t('workout_finish');
   }else{
     btn.disabled=true;
-    btn.textContent=`${done} / ${total} ${t('sets_done')}`;
+    btn.textContent=`${done} / ${total} ${t('workout_sets_done')}`;
   }
 }
 
@@ -1031,6 +1642,14 @@ function buildSetRowHTML(ex,si,set){
   return`${numCell}${repsCell}${kgCell}${actionCell}`;
 }
 
+function bindSetRowEvents(ex,idx){
+  // kg input — bind imperatively since we can't use oninput with escaped IDs safely
+  const kgEl=document.getElementById(`kg-inp-${ex.id}-${idx}`);
+  if(kgEl){
+    kgEl.oninput=function(){updateKg(ex.id,idx,this.value);};
+  }
+}
+
 // Double-tap detection for emoji button
 const _tapTimers={};
 function handleEmojiTap(exId,idx){
@@ -1047,18 +1666,19 @@ function handleEmojiTap(exId,idx){
 function buildExerciseCard(ex,ei){
   const sets=A.sessionSets[ex.id]||[];
   const exDone=sets.length>0&&sets.every(s=>s.done);
-  const bump=shouldIncrease(ex.id,ex.repRange[1]);
-  const prev=getExerciseHistory(ex.id);
+  const bump=shouldIncrease(ex.id,ex.repRange[1],ex.libId);
+  const prev=getExerciseHistory(ex.id,ex.libId);
   const lastS=prev.length?prev[prev.length-1]:null;
   const wts=lastS?lastS.sets.map(s=>parseFloat(s.weight)||0).filter(w=>w>0):[];
   const lastW=wts.length?Math.max(...wts):0;
   const lastR=lastS?Math.round(lastS.sets.reduce((a,s)=>a+(parseInt(s.reps)||0),0)/lastS.sets.length):0;
 
-  const bumpBadge=bump&&!exDone?`<span class="badge" style="background:#e8ff4722;color:#e8ff47">${t('load_badge')}</span>`:'';
-  const swapBtn=exDone?'':`<button class="btn-swap" onclick="openSwap('${ex.id}','${ex.muscle}')">${t('swap_btn')}</button>`;
+  const bumpBadge=bump&&!exDone?`<span class="badge" style="background:#e8ff4722;color:#e8ff47">${t('workout_load')}</span>`:'';
+  const swapBtn=exDone?'':`<button class="btn-swap" onclick="openSwap('${ex.id}','${ex.muscle}')">${t('workout_swap')}</button>`;
   const doneIcon=exDone?'<span style="color:#e8ff47">✓ </span>':'';
+  const cueText=t('cue_'+(ex.libId||''))||esc(ex.cues);
   const lastInfo=lastW>0
-    ?`<div class="last-info">${t('last')}: <span style="color:#f2f0ea;font-weight:600">${lastW}kg × ~${lastR} ${t('reps')}</span>${bump?` <span style="color:#e8ff47;font-weight:700">→ ${t('try')} ${Math.round(lastW*1.025*2)/2}kg</span>`:''}</div>`
+    ?`<div class="last-info">${t('workout_last')} <span style="color:#f2f0ea;font-weight:600">${lastW}kg × ~${lastR} ${t('workout_reps')}</span>${bump?` <span style="color:#e8ff47;font-weight:700">${t('workout_try')} ${Math.round(lastW*1.025*2)/2}kg</span>`:''}</div>`
     :'';
 
   let setsHTML='';
@@ -1070,15 +1690,15 @@ function buildExerciseCard(ex,ei){
   <div class="card ex-card" style="animation-delay:${ei*0.04}s;opacity:${exDone?0.45:1}" id="ex-card-${ex.id}">
     <div class="ex-header">
       <div class="ex-title-area">
-        <div class="ex-title">${doneIcon}${esc(exName(ex.name))}<span class="mtag">${esc(muscleName(ex.muscle))}</span></div>
-        <div class="ex-meta">${ex.sets} ${t('sets')} · ${ex.repRange[0]}–${ex.repRange[1]} ${t('reps')}</div>
+        <div class="ex-title">${doneIcon}${esc(t(ex.libId||ex.name))}<span class="mtag">${esc(t('muscle_'+ex.muscle))}</span></div>
+        <div class="ex-meta">${ex.sets} ${t('workout_sets')} · ${ex.repRange[0]}–${ex.repRange[1]} ${t('workout_reps')}</div>
       </div>
       <div class="ex-actions">${bumpBadge}${swapBtn}</div>
     </div>
-    <div class="cue-box">💡 ${esc(ex.cues)}</div>
+    <div class="cue-box">💡 ${cueText}</div>
     ${lastInfo}
-    <div class="set-col-hdr"><span>#</span><span>${t('sets_col')}</span><span>kg</span><span></span></div>
-    <div class="hint-text">${t('double_tap')}</div>
+    <div class="set-col-hdr"><span>${t('workout_col_set')}</span><span>${t('workout_col_reps')}</span><span>${t('workout_col_kg')}</span><span></span></div>
+    <div class="hint-text">${t('workout_hint_edit')}</div>
     ${setsHTML}
   </div>`;
 }
@@ -1089,22 +1709,27 @@ function buildExerciseCard(ex,ei){
 function openSwap(exId,muscle){
   A.swapTarget={exId,muscle};
   const alts=LIBRARY[muscle]||[];
-  const currentIds=A.sessionExercises.map(e=>e.id);
+  // Current session exercise IDs (to detect "in use")
+  const currentIds=A.sessionExercises.map(e=>e.libId||e.id);
+  const currentEx=A.sessionExercises.find(e=>e.id===exId);
+  const currentLibId=currentEx?(currentEx.libId||currentEx.id):'';
   let items='';
   alts.forEach(alt=>{
-    const inUse=currentIds.includes(alt.id)&&alt.id!==exId;
-    const isActive=alt.id===exId;
+    const isActive=alt.id===currentLibId;
+    const inUse=!isActive&&currentIds.includes(alt.id);
     const lw=getLastWeight(alt.id);
     const cls='swap-item'+(isActive?' active':inUse?' in-use':' available');
-    const click=inUse||isActive?'':`onclick="swapExercise('${exId}',LIBRARY['${muscle}'].find(x=>x.id==='${alt.id}'))"`;
-    const label=isActive?`✓ ${esc(exName(alt.name))}`:esc(exName(alt.name));
-    const status=isActive?`<div style="font-size:10px;color:#4a4a6a">${t('current')}</div>`:inUse?`<div style="font-size:10px;color:#4a4a6a">${t('in_use')}</div>`:'';
-    const cueRow=(!inUse&&!isActive)?`<div class="swap-cue">💡 ${esc(alt.cues)}</div>`:'';
+    const click=inUse||isActive?'':`onclick="doSwap('${esc(exId)}','${esc(muscle)}','${esc(alt.id)}')"`;
+    const altName=t(alt.id)||esc(alt.name);
+    const label=isActive?`✓ ${altName}`:altName;
+    const status=isActive?`<div style="font-size:10px;color:#4a4a6a">${t('workout_current')}</div>`:inUse?`<div style="font-size:10px;color:#4a4a6a">${t('workout_in_use')}</div>`:'';
+    const altCue=t('cue_'+alt.id)||esc(alt.cues);
+    const cueRow=(!inUse&&!isActive)?`<div class="swap-cue">💡 ${altCue}</div>`:'';
     items+=`<div class="${cls}" ${click}>
       <div class="swap-row">
         <div>
           <div style="font-weight:700;font-size:14px;color:${isActive?'#e8ff47':'#f2f0ea'}">${label}</div>
-          <div style="font-size:11px;color:#4a4a6a;margin-top:2px">${alt.sets} ${t('sets')} · ${alt.repRange[0]}–${alt.repRange[1]} ${t('reps')}</div>
+          <div style="font-size:11px;color:#4a4a6a;margin-top:2px">${alt.sets} ${t('workout_sets')} · ${alt.repRange[0]}–${alt.repRange[1]} ${t('workout_reps')}</div>
         </div>
         <div style="text-align:right">${lw?`<div style="font-size:12px;font-weight:700;color:#e8ff47">${lw}kg</div>`:''}${status}</div>
       </div>${cueRow}
@@ -1117,14 +1742,33 @@ function openSwap(exId,muscle){
     <div class="modal-sheet">
       <div class="modal-hdr">
         <div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px">${t('swap_exercise')}</div>
-          <div style="font-size:12px;color:#4a4a6a;margin-top:2px">${t('muscle_label')} <span style="color:#e8ff47;font-weight:700">${esc(muscleName(muscle))}</span></div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px">${t('workout_swap_title')}</div>
+          <div style="font-size:12px;color:#4a4a6a;margin-top:2px">${t('workout_muscle')} <span style="color:#e8ff47;font-weight:700">${esc(t('muscle_'+muscle))}</span></div>
         </div>
-        <button class="btn-back" onclick="closeSwap()">✕</button>
+        <button class="btn-back" style="width:44px;height:44px;font-size:20px;display:flex;align-items:center;justify-content:center" onclick="closeSwap()">✕</button>
       </div>
       <div class="modal-body">${items}</div>
     </div>`;
   document.body.appendChild(modal);
+}
+// Swap handler: builds a proper session exercise from library entry
+function doSwap(oldId,muscle,libId){
+  const libEx=LIBRARY[muscle].find(x=>x.id===libId);
+  if(!libEx)return;
+  const oldEx=A.sessionExercises.find(e=>e.id===oldId);
+  // Build a new exercise with a unique session ID
+  const bn=oldId.match(/^b(\d+)/);
+  const blockNum=bn?bn[1]:'0';
+  const newEx={
+    id:`b${blockNum}_${libId.replace('lib_','')}`,
+    libId:libId,
+    name:libEx.name,
+    muscle:muscle,
+    sets:libEx.sets,
+    repRange:libEx.repRange,
+    cues:libEx.cues
+  };
+  swapExercise(oldId,newEx);
 }
 function closeSwap(){
   const m=document.getElementById('swap-modal');
@@ -1144,56 +1788,57 @@ function viewHome(){
   const weekS=A.history.filter(h=>isThisISOWeek(h.date)).length;
 
   const pillsHTML=nextDay.exercises.map(ex=>{
-    const lw=getLastWeight(ex.id);
-    const bump=shouldIncrease(ex.id,ex.repRange[1]);
-    return`<span class="ex-pill"><span style="font-size:12px;color:#f2f0ea">${esc(exName(ex.name))}</span>${lw?`<span style="font-size:12px;font-weight:700;color:${bump?'#e8ff47':'#4a4a6a'}">${bump?'↑':''}${lw}kg</span>`:''}</span>`;
+    const lw=getLastWeight(ex.libId)||getLastWeight(ex.id);
+    const bump=shouldIncrease(ex.id,ex.repRange[1],ex.libId);
+    return`<span class="ex-pill"><span style="font-size:12px;color:#f2f0ea">${esc(t(ex.libId||ex.name))}</span>${lw?`<span style="font-size:12px;font-weight:700;color:${bump?'#e8ff47':'#4a4a6a'}">${bump?'↑':''}${lw}kg</span>`:''}</span>`;
   }).join('');
 
   const swapAlert=stu<=2?`
     <div class="scard" style="margin-top:4px">
-      <div style="font-size:11px;color:#47ffe8;font-weight:700;letter-spacing:.08em;margin-bottom:3px">${t('swap_alert')} ${stu} ${stu===1?t('swap_sessions'):t('swap_sessions_pl')}</div>
-      <div style="font-size:13px;color:#f2f0ea">${t('coming_up')} <strong>${esc(nextB.label)} — ${esc(t(nextB.themeKey||nextB.theme))}</strong></div>
+      <div style="font-size:11px;color:#47ffe8;font-weight:700;letter-spacing:.08em;margin-bottom:3px">🔄 ${t('home_block_swap_in')} ${stu} ${stu!==1?t('home_sessions'):t('home_session')}</div>
+      <div style="font-size:13px;color:#f2f0ea">${t('home_coming_up')} <strong>${t('block_label')} ${nextB.id} — ${t('theme_'+nextB.theme)}</strong></div>
     </div>`:'';
 
   const dayListHTML=block.days.map(day=>{
     const isNext=day.id===A.activeDayId;
-    const badge=isNext?`<span class="badge" style="background:#e8ff4722;color:#e8ff47">${getLang()==='fi'?'SEURAAVA':'NEXT'}</span>`:'';
+    const badge=isNext?`<span class="badge" style="background:#e8ff4722;color:#e8ff47">${t('home_next')}</span>`:'';
     return`<div class="card day-card" onclick="startWorkout('${day.id}')">
       <div>
-        <div style="font-weight:700;font-size:15px">${day.emoji} ${esc(t('day_'+day.id.toLowerCase()+'_label'))}</div>
-        <div style="font-size:12px;color:#4a4a6a">${esc(t('focus_'+day.id.toLowerCase()))}</div>
+        <div style="font-weight:700;font-size:15px">${day.emoji} ${esc(t('day_'+day.label))}</div>
+        <div style="font-size:12px;color:#4a4a6a">${esc(t('focus_'+day.focus))}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">${badge}<span class="day-arrow">›</span></div>
     </div>`;
   }).join('');
 
+  const freq=(getProfile()||{freq:3}).freq;
   return`
   <div class="hdr">
     <div><div class="logo">IRONLOG</div><div class="hdr-sub">${today()}</div></div>
     <div style="text-align:right">
-      <div style="font-size:10px;color:#47ffe8;font-weight:700;letter-spacing:.06em">${esc(block.label)}</div>
-      <div style="font-size:10px;color:#4a4a6a;margin-top:1px">${t('swap_in')} ${stu} ${stu===1?t('session_s'):t('sessions_s')}</div>
+      <div style="font-size:10px;color:#47ffe8;font-weight:700;letter-spacing:.06em">${t('block_label')} ${block.id}</div>
+      <div style="font-size:10px;color:#4a4a6a;margin-top:1px">${stu} ${stu!==1?t('home_sessions_left'):t('home_session_left')}</div>
     </div>
   </div>
   <div class="page">
-    <div class="h1">${t('ready')}<br>${t('build')}</div>
-    <div class="sub">${t('sub')}</div>
+    <div class="h1">${t('home_ready')}</div>
+    <div class="sub">${freq} ${t('home_days_week')} ${freq<=3?t('home_full_body'):t('home_split')} ${BLOCKS.length} ${t('home_blocks_variation')}</div>
     <div class="stats-row">
       <div class="stat-box"><div class="stat-val">${totalS}</div><div class="stat-lbl">${t('stat_sessions')}</div></div>
-      <div class="stat-box"><div class="stat-val">${weekS}<span>/3</span></div><div class="stat-lbl">${t('stat_week')}</div></div>
-      <div class="stat-box"><div class="stat-val">${stu}</div><div class="stat-lbl">${t('stat_swap')}</div></div>
+      <div class="stat-box"><div class="stat-val">${weekS}<span>/${freq}</span></div><div class="stat-lbl">${t('stat_this_week')}</div></div>
+      <div class="stat-box"><div class="stat-val">${stu}</div><div class="stat-lbl">${t('stat_to_swap')}</div></div>
     </div>
     <div class="acard">
       <div style="font-size:11px;color:#e8ff47;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">
-        ${t('up_next')} · ${esc(block.label)} · ${getLang()==='fi'?'PÄIVÄ':'DAY'} ${nextDay.id} · ${t('rest_between')}
+        ${t('home_up_next')} · ${t('block_label')} ${block.id} · ${t('home_day')} ${nextDay.id}
       </div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;margin-bottom:2px">${nextDay.emoji} ${esc(t('day_'+nextDay.id.toLowerCase()+'_label'))}</div>
-      <div style="font-size:13px;color:#4a4a6a;margin-bottom:14px">${esc(t('focus_'+nextDay.id.toLowerCase()))}</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;margin-bottom:2px">${nextDay.emoji} ${esc(t('day_'+nextDay.label))}</div>
+      <div style="font-size:13px;color:#4a4a6a;margin-bottom:14px">${esc(t('focus_'+nextDay.focus))}</div>
       <div style="display:flex;flex-wrap:wrap;margin-bottom:16px">${pillsHTML}</div>
-      <button class="btn-primary" onclick="startWorkout('${A.activeDayId}')">${t('start_workout')}</button>
+      <button class="btn-primary" onclick="startWorkout('${A.activeDayId}')">${t('home_start')}</button>
     </div>
     ${swapAlert}
-    <div class="sec-title" style="margin-top:20px">${t('all_days')} — ${esc(block.label)}</div>
+    <div class="sec-title" style="margin-top:20px">${t('home_all_days')} ${t('block_label')} ${block.id}</div>
     ${dayListHTML}
   </div>
   ${navHTML("home")}`;
@@ -1204,34 +1849,28 @@ function viewWorkout(){
   const done=doneSets(),total=totalSets();
   const pct=total?Math.round(done/total*100):0;
   const isDone=allDone();
+  const someStarted=done>0&&!isDone;
   return`
-  <div id="rest-bar" class="rest-bar">
-    <div id="rest-time" class="rest-pulse" style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:#e8ff47">${getLang()==='fi'?'LEPO':'REST'} · 1:30</div>
-    <button class="btn-tiny" style="color:#e8ff47;border-color:#e8ff47" onclick="skipRest()">${t('skip')}</button>
-  </div>
   <div id="workout-hdr" class="hdr" style="padding-top:48px">
     <div>
       <div class="logo">IRONLOG</div>
-      <div id="elapsed-txt" class="hdr-sub">${BLOCKS[A.blockIdx].label} · ${t('nav_log')} ${A.activeDayId} · ${fmtTime(A.elapsed)}</div>
+      <div id="elapsed-txt" class="hdr-sub">${t('block_label')} ${BLOCKS[A.blockIdx].id} · ${t('home_day')} ${A.activeDayId} · ${fmtTime(A.elapsed)}</div>
     </div>
-    <button class="btn-back" onclick="cancelWorkout()" style="
-      width:40px;height:40px;border-radius:12px;background:#1c1c2e;border:1px solid #2a2a40;
-      font-size:18px;display:flex;align-items:center;justify-content:center;color:#f2f0ea">✕</button>
+    <button style="background:none;border:1px solid #1c1c2e;color:#e8ff47;font-weight:700;font-size:18px;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center" onclick="cancelWorkout()">✕</button>
   </div>
   <div class="page">
     <div class="progress-track"><div id="progress-fill" class="progress-fill" style="width:${pct}%"></div></div>
     ${exercisesHTML}
     <div style="height:12px"></div>
     <button id="finish-btn" class="btn-primary" onclick="finishWorkout()" ${isDone?'':'disabled'}>
-      ${isDone?t('finish_workout'):`${done} / ${total} ${t('sets_done')}`}
+      ${isDone?t('workout_finish'):`${done} / ${total} ${t('workout_sets_done')}`}
     </button>
-    ${isDone?'':`
-    <div style="text-align:center;font-size:12px;color:#4a4a6a;margin-top:8px">${t('complete_all')}</div>
-    <div id="quitter-area" style="text-align:center;margin-top:28px">
-      <button onclick="quitterWorkout()" style="background:none;border:none;color:#4a4a6a;font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:4px 8px">
-        ${t('quitter_btn')}
-      </button>
-    </div>`}
+    ${isDone?'':`<div style="text-align:center;font-size:12px;color:#4a4a6a;margin-top:8px">${t('workout_complete_all')}</div>`}
+    ${someStarted?`<button class="btn-ghost" style="margin-top:10px;color:#4a4a6a;border-color:#1c1c2e" onclick="quitWithoutCompleting()">${t('workout_quit')}</button>`:''}
+  </div>
+  <div id="rest-bar" class="rest-bar">
+    <div id="rest-time" class="rest-pulse" style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:#e8ff47">${t('workout_rest')} · 1:30</div>
+    <button class="btn-tiny" style="color:#e8ff47;border-color:#e8ff47" onclick="skipRest()">${t('workout_skip')}</button>
   </div>`;
 }
 
@@ -1243,28 +1882,29 @@ function viewComplete(){
   const blockSwapped=BLOCKS[A.blockIdx].id!==s.blockId;
   const swapNote=blockSwapped?`
     <div class="scard" style="margin-bottom:16px">
-      <div style="font-size:12px;font-weight:700;color:#47ffe8;margin-bottom:4px;text-transform:uppercase;letter-spacing:.1em">${t('block_switch')}</div>
-      <div style="font-size:14px;color:#f2f0ea">${t('now_starting')} <strong>${esc(BLOCKS[A.blockIdx].label)} — ${esc(t('theme'+BLOCKS[A.blockIdx].id))}</strong>.</div>
+      <div style="font-size:12px;font-weight:700;color:#47ffe8;margin-bottom:4px;text-transform:uppercase;letter-spacing:.1em">🔄 ${t('complete_switch')}</div>
+      <div style="font-size:14px;color:#f2f0ea">${t('complete_now_starting')} <strong>${t('block_label')} ${BLOCKS[A.blockIdx].id} — ${t('theme_'+BLOCKS[A.blockIdx].theme)}</strong>.</div>
     </div>`:'';
+  const dayLabel=s.dayLabel?t('day_'+s.dayLabel)||s.dayLabel:s.dayLabel;
   return`
   <div class="page">
     <div class="complete-center">
       <div class="pop-in" style="font-size:72px">🏆</div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:900;color:#e8ff47;margin-top:12px">${t('done')}</div>
-      <div style="color:#4a4a6a;font-size:14px;margin-top:4px">${esc(t('day_'+(s.dayId||'a').toLowerCase()+'_label'))} · ${s.duration} min</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:900;color:#e8ff47;margin-top:12px">${t('complete_done')}</div>
+      <div style="color:#4a4a6a;font-size:14px;margin-top:4px">${esc(dayLabel)} · ${s.duration} ${t('complete_min')}</div>
     </div>
     <div class="stats-row">
-      <div class="stat-box"><div class="stat-val">${s.duration}m</div><div class="stat-lbl">${t('duration')}</div></div>
-      <div class="stat-box"><div class="stat-val">${s.exercises.length}</div><div class="stat-lbl">${t('exercises')}</div></div>
-      <div class="stat-box"><div class="stat-val">${vol>0?Math.round(vol/100)/10+'k':'—'}</div><div class="stat-lbl">${t('vol')}</div></div>
+      <div class="stat-box"><div class="stat-val">${s.duration}m</div><div class="stat-lbl">${t('stat_duration')}</div></div>
+      <div class="stat-box"><div class="stat-val">${s.exercises.length}</div><div class="stat-lbl">${t('stat_exercises')}</div></div>
+      <div class="stat-box"><div class="stat-val">${vol>0?Math.round(vol/100)/10+'k':'—'}</div><div class="stat-lbl">${t('stat_volume')}</div></div>
     </div>
     ${swapNote}
     <div class="card" style="margin-bottom:16px">
-      <div style="font-size:12px;color:#4a4a6a;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;font-weight:700">${t('up_next_label')}</div>
-      <div style="font-weight:700;font-size:16px">${nd?nd.emoji+' '+esc(t('day_'+nd.id.toLowerCase()+'_label')):''}</div>
-      <div style="font-size:13px;color:#4a4a6a;margin-top:2px">${nd?esc(t('focus_'+nd.id.toLowerCase())):''}</div>
+      <div style="font-size:12px;color:#4a4a6a;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;font-weight:700">${t('complete_up_next')}</div>
+      <div style="font-weight:700;font-size:16px">${nd?nd.emoji+' '+esc(t('day_'+nd.label)||nd.label):''}</div>
+      <div style="font-size:13px;color:#4a4a6a;margin-top:2px">${nd?esc(t('focus_'+nd.focus)||nd.focus):''}</div>
     </div>
-    <button class="btn-primary" onclick="navigate('home')">${t('back_home')}</button>
+    <button class="btn-primary" onclick="navigate('home')">${t('complete_back')}</button>
   </div>`;
 }
 
@@ -1272,7 +1912,7 @@ function viewHistory(){
   const hist=[...A.history].reverse();
   let content='';
   if(!hist.length){
-    content=`<div style="color:#4a4a6a;text-align:center;padding-top:40px">${t('no_sessions')}</div>`;
+    content=`<div style="color:#4a4a6a;text-align:center;padding-top:40px">${t('history_empty')}</div>`;
   }else{
     hist.forEach(session=>{
       const vol=(session.exercises||[]).reduce((a,e)=>a+(e.sets||[]).reduce((b,st)=>b+(parseFloat(st.weight)||0)*(parseFloat(st.reps)||0),0),0);
@@ -1281,24 +1921,26 @@ function viewHistory(){
       (session.exercises||[]).forEach(ex=>{
         const wts=(ex.sets||[]).map(st=>parseFloat(st.weight)||0).filter(w=>w>0);
         const maxW=wts.length?Math.max(...wts):0;
+        const exName=ex.libId?t(ex.libId):esc(ex.name);
         if(maxW>0)exRows+=`<div style="display:flex;justify-content:space-between;padding-top:5px;border-top:1px solid #1c1c2e;margin-top:5px">
-          <div style="font-size:13px;color:#4a4a6a">${esc(exName(ex.name))}</div>
+          <div style="font-size:13px;color:#4a4a6a">${exName}</div>
           <div style="font-size:13px;font-weight:700">${maxW}kg</div>
         </div>`;
       });
-      const sessionDayLabel=session.dayId?t('day_'+session.dayId.toLowerCase()+'_label'):esc(session.dayLabel||'');
+      const sessionDayLabel=session.dayLabel?t('day_'+session.dayLabel)||session.dayLabel:session.dayLabel;
       content+=`<div class="card">
         <div class="row">
-          <div style="font-weight:700;font-size:15px">${sessionDayLabel}</div>
+          <div style="font-weight:700;font-size:15px">${esc(sessionDayLabel||'')}</div>
           <div style="text-align:right">
             <div style="font-size:11px;color:#e8ff47;font-weight:700">${ds}</div>
-            ${session.blockLabel?`<div style="font-size:10px;color:#4a4a6a;margin-top:1px">${esc(session.blockLabel)}</div>`:''}
+            ${session.blockLabel?`<div style="font-size:10px;color:#4a4a6a;margin-top:1px">${t('block_label')} ${session.blockId||''}</div>`:''}
           </div>
         </div>
         <div style="font-size:12px;color:#4a4a6a;margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
-          <span class="tag">${session.duration}min</span>
-          <span class="tag">${(session.exercises||[]).length} ${t('ex_label')}</span>
-          ${vol>0?`<span class="tag">${Math.round(vol)}${t('vol_label')}</span>`:''}
+          <span class="tag">${session.duration} ${t('complete_min')}</span>
+          <span class="tag">${(session.exercises||[]).length} ${t('history_ex')}</span>
+          ${vol>0?`<span class="tag">${Math.round(vol)}kg ${t('history_vol')}</span>`:''}
+          ${session.partial?`<span class="tag" style="color:#ff4455;border:1px solid #ff445533">${t('history_partial')}</span>`:''}
         </div>
         <div>${exRows}</div>
       </div>`;
@@ -1307,7 +1949,7 @@ function viewHistory(){
   return`
   <div class="hdr"><div class="logo">IRONLOG</div></div>
   <div class="page">
-    <div class="h2">${t('history')}</div>
+    <div class="h2">${t('history_title')}</div>
     ${content}
   </div>
   ${navHTML("history")}`;
@@ -1324,7 +1966,7 @@ function viewProgram(){
     const isActive=i===A.blockIdx;
     return`<button class="block-tab"
       style="background:${isPreview?'#e8ff47':'#1c1c30'};color:${isPreview?'#080810':'#4a4a6a'};border-color:${isActive?'#e8ff47':'transparent'}"
-      onclick="setPreviewBlock(${i})">${esc(b.label)}${isActive?' ✓':''}</button>`;
+      onclick="setPreviewBlock(${i})">${t('block_label')} ${b.id}${isActive?' ✓':''}</button>`;
   }).join('');
 
   const daysHTML=pb.days.map(day=>{
@@ -1333,8 +1975,8 @@ function viewProgram(){
       const lw=getLastWeight(ex.id);
       exRows+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid #1c1c2e">
         <div>
-          <div style="font-size:13px;font-weight:600">${esc(exName(ex.name))}<span class="mtag">${esc(muscleName(ex.muscle))}</span></div>
-          <div style="font-size:11px;color:#4a4a6a">${ex.sets} ${t('sets')} · ${ex.repRange[0]}–${ex.repRange[1]} ${t('reps')}</div>
+          <div style="font-size:13px;font-weight:600">${esc(t(ex.libId||ex.name))}<span class="mtag">${esc(t('muscle_'+ex.muscle))}</span></div>
+          <div style="font-size:11px;color:#4a4a6a">${ex.sets} ${t('workout_sets')} · ${ex.repRange[0]}–${ex.repRange[1]} ${t('workout_reps')}</div>
         </div>
         ${lw?`<div style="font-size:13px;font-weight:700;color:#e8ff47">${lw}kg</div>`:''}
       </div>`;
@@ -1342,8 +1984,8 @@ function viewProgram(){
     return`<div class="card" style="margin-bottom:10px">
       <div class="row" style="margin-bottom:10px">
         <div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px">${day.emoji} ${esc(t('day_'+day.id.toLowerCase()+'_label'))}</div>
-          <div style="font-size:11px;color:#4a4a6a">${esc(t('focus_'+day.id.toLowerCase()))}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px">${day.emoji} ${esc(t('day_'+day.label))}</div>
+          <div style="font-size:11px;color:#4a4a6a">${esc(t('focus_'+day.focus))}</div>
         </div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:#1c1c2e">${day.id}</div>
       </div>
@@ -1351,202 +1993,197 @@ function viewProgram(){
     </div>`;
   }).join('');
 
+  const freq=(getProfile()||{freq:3}).freq;
   return`
   <div class="hdr"><div class="logo">IRONLOG</div></div>
   <div class="page">
-    <div class="h2">${t('the_program')}</div>
+    <div class="h2">${t('program_title')}</div>
     <div class="acard" style="margin-bottom:16px">
-      <div style="font-size:12px;font-weight:700;color:#e8ff47;letter-spacing:.1em;margin-bottom:6px">${t('full_body')}</div>
-      <div style="font-size:13px;color:#4a4a6a;line-height:1.6">${t('program_desc')}</div>
+      <div style="font-size:12px;font-weight:700;color:#e8ff47;letter-spacing:.1em;margin-bottom:6px">${freq<=3?t('program_full_body'):t('program_split')} · ${freq}${t('program_per_week')} · ${BLOCKS.length} ${t('program_blocks')}</div>
+      <div style="font-size:13px;color:#4a4a6a;line-height:1.6">
+        ${BLOCKS.length} ${t('program_desc_1')} ${sessionsPerBlock()} ${t('program_desc_2')}
+        ${t('program_desc_swap')}
+      </div>
     </div>
     <div class="scard" style="margin-bottom:16px;display:flex;align-items:center;gap:14px">
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:38px;font-weight:900;color:#47ffe8;line-height:1">${stu}</div>
       <div>
-        <div style="font-size:13px;font-weight:700;color:#47ffe8">${stu===1?t('session_until'):t('sessions_until')} ${esc(nextB.label)}</div>
-        <div style="font-size:12px;color:#4a4a6a;margin-top:2px">${esc(t('theme'+nextB.id))}</div>
+        <div style="font-size:13px;font-weight:700;color:#47ffe8">${stu!==1?t('program_sessions_until'):t('program_session_until')} ${t('block_label')} ${nextB.id}</div>
+        <div style="font-size:12px;color:#4a4a6a;margin-top:2px">${esc(t('theme_'+nextB.theme))}</div>
       </div>
     </div>
     <div class="block-grid">${tabsHTML}</div>
     <div style="font-size:12px;color:#47ffe8;font-weight:700;margin-bottom:12px">
-      ${esc(t('theme'+pb.id))}${A.blockIdx===A.previewBlockIdx?' '+t('active_now'):''}
+      ${esc(t('theme_'+pb.theme))}${A.blockIdx===A.previewBlockIdx?` · ${t('program_active')}`:''}
     </div>
     ${daysHTML}
   </div>
   ${navHTML("program")}`;
 }
 
-function viewSettings(){
-  const cfg=getSettings();
-  const presets=[30,45,60,90,120,180];
-  const presetsHTML=presets.map(s=>{
-    const active=cfg.restSecs===s;
-    return`<button onclick="setRestSecs(${s})" style="
-      flex:1;padding:12px 4px;border-radius:12px;font-family:'Barlow Condensed',sans-serif;
-      font-weight:900;font-size:18px;letter-spacing:.02em;border:2px solid ${active?'#e8ff47':'#1c1c2e'};
-      background:${active?'#e8ff4718':'#10101a'};color:${active?'#e8ff47':'#4a4a6a'};
-      cursor:pointer">${s<60?s+'s':Math.floor(s/60)+(s%60?':'+String(s%60).padStart(2,'0'):'')+'m'}</button>`;
-  }).join('');
-
-  const isFi=cfg.lang==='fi';
+function viewOnboarding(){
   return`
-  <div class="hdr"><div class="logo">IRONLOG</div></div>
-  <div class="page">
-    <div class="h2">${t('settings')}</div>
+  <div class="ob-page">
+    <div class="ob-title">IRONLOG</div>
+    <div style="font-size:14px;color:#4a4a6a;margin-bottom:8px">${t('ob_tagline')}</div>
+    <div class="ob-sub">${t('ob_subtitle')}</div>
 
-    <div class="sec-title">${t('language')}</div>
-    <div class="card" style="margin-bottom:10px">
-      <div style="display:flex;gap:8px">
-        <button onclick="setLang('en')" style="flex:1;padding:14px;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;
-          border:2px solid ${!isFi?'#e8ff47':'#1c1c2e'};background:${!isFi?'#e8ff4718':'#10101a'};
-          color:${!isFi?'#e8ff47':'#4a4a6a'}">🇬🇧 English</button>
-        <button onclick="setLang('fi')" style="flex:1;padding:14px;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;
-          border:2px solid ${isFi?'#e8ff47':'#1c1c2e'};background:${isFi?'#e8ff4718':'#10101a'};
-          color:${isFi?'#e8ff47':'#4a4a6a'}">🇫🇮 Suomi</button>
+    <div class="ob-section">
+      <div class="ob-label">${t('ob_freq')}</div>
+      <div class="ob-options" id="ob-freq">
+        <div class="ob-opt" data-val="2" onclick="obSelect('freq',2)"><div class="ob-opt-big">2</div><div class="ob-opt-sm">${t('ob_full_body')}</div></div>
+        <div class="ob-opt" data-val="3" onclick="obSelect('freq',3)"><div class="ob-opt-big">3</div><div class="ob-opt-sm">${t('ob_full_body')}</div></div>
+        <div class="ob-opt" data-val="4" onclick="obSelect('freq',4)"><div class="ob-opt-big">4</div><div class="ob-opt-sm">${t('ob_upper_lower')}</div></div>
+        <div class="ob-opt" data-val="5" onclick="obSelect('freq',5)"><div class="ob-opt-big">5</div><div class="ob-opt-sm">${t('ob_ppl')}</div></div>
       </div>
     </div>
 
-    <div class="sec-title" style="margin-top:16px">${t('rest_timer')}</div>
-    <div class="card" style="margin-bottom:10px">
-      <div class="row" style="margin-bottom:${cfg.restEnabled?'18px':'0'}">
-        <div>
-          <div style="font-weight:700;font-size:15px">${t('enable_rest')}</div>
-          <div style="font-size:12px;color:#4a4a6a;margin-top:2px">${t('rest_auto')}</div>
-        </div>
-        <button onclick="toggleRest()" style="
-          width:48px;height:28px;border-radius:99px;border:none;cursor:pointer;
-          background:${cfg.restEnabled?'#e8ff47':'#1c1c2e'};
-          position:relative;transition:background .2s">
-          <div style="
-            position:absolute;top:4px;width:20px;height:20px;border-radius:50%;
-            background:${cfg.restEnabled?'#080810':'#4a4a6a'};
-            left:${cfg.restEnabled?'24px':'4px'};transition:left .2s"></div>
-        </button>
+    <div class="ob-section">
+      <div class="ob-label">${t('ob_iam')}</div>
+      <div class="ob-sex" id="ob-sex">
+        <div class="ob-opt" data-val="male" onclick="obSelect('sex','male')"><div class="ob-emoji">🧔</div><div style="font-weight:700">${t('ob_male')}</div></div>
+        <div class="ob-opt" data-val="female" onclick="obSelect('sex','female')"><div class="ob-emoji">👩</div><div style="font-weight:700">${t('ob_female')}</div></div>
       </div>
-      ${cfg.restEnabled?`
-      <div style="border-top:1px solid #1c1c2e;padding-top:16px">
-        <div style="font-size:12px;color:#4a4a6a;margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700">${t('duration')}</div>
-        <div style="display:flex;gap:6px;margin-bottom:14px">${presetsHTML}</div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="font-size:12px;color:#4a4a6a;white-space:nowrap">${t('custom_sec')}</div>
-          <input type="number" value="${cfg.restSecs}" min="10" max="600"
-            oninput="setRestSecs(parseInt(this.value)||90)"
-            style="flex:1;background:#080810;border:1px solid #1c1c2e;border-radius:10px;
-            padding:10px 12px;color:#f2f0ea;font-size:15px;text-align:center">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:#e8ff47;min-width:44px;text-align:right">
-            ${cfg.restSecs<60?cfg.restSecs+'s':Math.floor(cfg.restSecs/60)+(cfg.restSecs%60?':'+String(cfg.restSecs%60).padStart(2,'0'):'')+'m'}
-          </div>
-        </div>
-      </div>`:''}
     </div>
 
-    <div class="sec-title" style="margin-top:24px">${t('how_to')}</div>
-    <button onclick="openGuide()" class="card" style="width:100%;text-align:left;border:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div>
-        <div style="font-weight:700;font-size:15px">${t('app_guide')}</div>
-        <div style="font-size:12px;color:#4a4a6a;margin-top:2px">${t('app_guide_sub')}</div>
-      </div>
-      <div style="color:#e8ff47;font-size:20px;margin-left:12px">›</div>
+    <button class="btn-primary ob-start" id="ob-start-btn" onclick="obFinish()" disabled>
+      ${t('ob_start')}
     </button>
-
-  </div>
-  ${navHTML("settings")}
-
-  <div id="guide-modal" style="display:none;position:fixed;inset:0;z-index:500;background:#080810;overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <div style="max-width:430px;margin:0 auto;padding:0 0 40px">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:52px 20px 20px;position:sticky;top:0;background:#080810;border-bottom:1px solid #1c1c2e;z-index:10">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900">${t('guide_title')}</div>
-        <button onclick="closeGuide()" style="width:40px;height:40px;border-radius:12px;background:#1c1c2e;border:1px solid #2a2a40;font-size:18px;color:#f2f0ea;cursor:pointer">✕</button>
-      </div>
-      <div style="padding:20px">
-
-        <div class="sec-title">${t('logging_title')}</div>
-        <div class="card" style="margin-bottom:16px">
-          ${[
-            ['1',t('guide_step1_title'),t('guide_step1')],
-            ['2',t('guide_step2_title'),t('guide_step2')],
-            ['3',t('guide_step3_title'),t('guide_step3')],
-            ['4',t('guide_step4_title'),t('guide_step4')],
-            ['5',t('guide_step5_title'),t('guide_step5')],
-          ].map(([n,title,desc])=>`
-          <div style="display:flex;gap:14px;padding:10px 0;border-top:1px solid #1c1c2e;align-items:flex-start">
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:#e8ff47;line-height:1;flex-shrink:0;width:22px">${n}</div>
-            <div>
-              <div style="font-weight:700;font-size:13px;margin-bottom:2px">${title}</div>
-              <div style="font-size:12px;color:#4a4a6a;line-height:1.5">${desc}</div>
-            </div>
-          </div>`).join('')}
-        </div>
-
-        <div class="sec-title">${t('blocks_title')}</div>
-        <div class="card" style="margin-bottom:16px">
-          <div style="font-size:13px;color:#4a4a6a;line-height:1.6;margin-bottom:10px">${t('guide_blocks_desc')}</div>
-          ${[1,2,3,4,5,6].map(n=>`
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid #1c1c2e">
-            <div style="font-size:13px;color:#4a4a6a">${isFi?'Lohko':'Block'} ${n}</div>
-            <div style="font-size:13px;font-weight:600;color:#f2f0ea">${t('theme'+n)}</div>
-          </div>`).join('')}
-        </div>
-
-        <div class="sec-title">${t('swap_title')}</div>
-        <div class="card" style="margin-bottom:16px">
-          <div style="font-size:13px;color:#4a4a6a;line-height:1.6">${t('guide_swap_desc')}</div>
-        </div>
-
-        <div class="sec-title">${t('overload_title')}</div>
-        <div class="card" style="margin-bottom:16px">
-          <div style="font-size:13px;color:#4a4a6a;line-height:1.6">${t('guide_overload_desc')}</div>
-        </div>
-
-        <div class="sec-title">${t('data_title')}</div>
-        <div class="card" style="margin-bottom:16px">
-          <div style="font-size:13px;color:#4a4a6a;line-height:1.6">${t('guide_data_desc')}</div>
-        </div>
-
-      </div>
-    </div>
+    <div style="font-size:11px;color:#4a4a6a;margin-top:12px">${t('ob_change_later')}</div>
   </div>`;
 }
 
-function openGuide(){
-  const m=document.getElementById('guide-modal');
-  if(m){m.style.display='block';m.scrollTop=0;}
+const _obState={freq:null,sex:null};
+function obSelect(key,val){
+  _obState[key]=val;
+  // Update UI
+  const container=document.getElementById(key==='freq'?'ob-freq':'ob-sex');
+  if(container){
+    container.querySelectorAll('.ob-opt').forEach(el=>{
+      el.classList.toggle('selected',el.getAttribute('data-val')==String(val));
+    });
+  }
+  // Enable start button if both selected
+  const btn=document.getElementById('ob-start-btn');
+  if(btn)btn.disabled=!(_obState.freq&&_obState.sex);
 }
-function closeGuide(){
-  const m=document.getElementById('guide-modal');
-  if(m)m.style.display='none';
+function obFinish(){
+  if(!_obState.freq||!_obState.sex)return;
+  saveProfile({freq:_obState.freq,sex:_obState.sex});
+  reloadBlocks();
+  ls.set(SK.blockIdx,0);
+  A.blockIdx=0;
+  A.previewBlockIdx=0;
+  A.activeDayId=getNextDayId();
+  navigate("home");
+}
+function resetProfile(){
+  if(!confirm(t('confirm_reset_profile')))return;
+  localStorage.removeItem("il_profile");
+  localStorage.removeItem(SK.blockIdx);
+  ls.set(SK.nextDay,"A");
+  BLOCKS=[];
+  navigate("onboarding");
 }
 
-function toggleRest(){
-  const cfg=getSettings();
-  cfg.restEnabled=!cfg.restEnabled;
-  saveSettings(cfg);
-  render();
+function viewSettings(){
+  const s=getSettings();
+  const rest=s.restSeconds!==undefined?s.restSeconds:90;
+  const profile=getProfile();
+  const restOptions=[0,30,45,60,90,120,150,180];
+
+  const restBtns=restOptions.map(sec=>{
+    const active=sec===rest;
+    const label=sec===0?t('settings_rest_off'):(sec<60?`${sec}s`:`${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`);
+    return`<button class="ob-opt${active?' selected':''}" style="min-width:52px;flex:0 0 auto;padding:10px 6px"
+      onclick="setRestTimer(${sec})">${label}</button>`;
+  }).join('');
+
+  const lang=getLang();
+  const langBtns=`
+    <button class="ob-opt${lang==='en'?' selected':''}" style="min-width:80px;flex:0 0 auto;padding:10px 6px" onclick="setLang('en')">English</button>
+    <button class="ob-opt${lang==='fi'?' selected':''}" style="min-width:80px;flex:0 0 auto;padding:10px 6px" onclick="setLang('fi')">Suomi</button>`;
+
+  const howToUse=`
+    <div class="card" style="margin-top:16px">
+      <div style="font-weight:700;font-size:15px;margin-bottom:10px">${t('settings_how_to')}</div>
+      <div style="font-size:13px;color:#4a4a6a;line-height:1.7">
+        <strong style="color:#f2f0ea">${t('settings_how_1')}</strong> ${t('settings_how_1b')}<br><br>
+        <strong style="color:#f2f0ea">${t('settings_how_2')}</strong> ${t('settings_how_2b')}<br><br>
+        <strong style="color:#f2f0ea">${t('settings_how_3')}</strong> ${t('settings_how_3b')}<br><br>
+        <strong style="color:#f2f0ea">${t('settings_how_4')}</strong> ${t('settings_how_4b')}<br><br>
+        <strong style="color:#f2f0ea">${t('settings_how_5')}</strong> ${t('settings_how_5b')}<br><br>
+        <strong style="color:#f2f0ea">${t('settings_how_6')}</strong> ${t('settings_how_6b')}<br><br>
+        <strong style="color:#f2f0ea">${t('settings_how_7')}</strong> ${t('settings_how_7b')}
+      </div>
+    </div>`;
+
+  return`
+  <div class="hdr"><div class="logo">IRONLOG</div></div>
+  <div class="page">
+    <div class="h2">${t('settings_title')}</div>
+
+    <div class="sec-title">${t('settings_language')} / Kieli</div>
+    <div class="card">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${langBtns}</div>
+    </div>
+
+    <div class="sec-title" style="margin-top:20px">${t('settings_rest')}</div>
+    <div class="card">
+      <div style="font-size:13px;color:#4a4a6a;margin-bottom:10px">${t('settings_rest_desc')}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${restBtns}</div>
+    </div>
+
+    <div class="sec-title" style="margin-top:20px">${t('settings_setup')}</div>
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:14px;font-weight:700">${profile?profile.freq:'3'}× ${t('settings_per_week')} · ${profile&&profile.sex==='female'?t('settings_female'):t('settings_male')}</div>
+        <div style="font-size:12px;color:#4a4a6a;margin-top:2px">${profile&&profile.freq<=3?t('settings_full_body'):t('settings_split')} ${t('settings_program')}</div>
+      </div>
+      <button class="btn-tiny" style="color:#e8ff47;border-color:#e8ff47" onclick="resetProfile()">${t('settings_change')}</button>
+    </div>
+
+    ${howToUse}
+
+    <div class="sec-title" style="margin-top:20px">${t('settings_data')}</div>
+    <div class="card">
+      <button class="btn-ghost" style="color:#ff4455;border-color:#ff445533;margin-bottom:8px" onclick="clearAllData()">${t('settings_reset')}</button>
+      <div style="font-size:11px;color:#4a4a6a">${t('settings_reset_warn')}</div>
+    </div>
+  </div>
+  ${navHTML("settings")}`;
 }
-function setRestSecs(v){
-  if(!v||v<10||v>600)return;
-  const cfg=getSettings();
-  cfg.restSecs=v;
-  saveSettings(cfg);
+
+function setRestTimer(sec){
+  saveSetting('restSeconds',sec);
   render();
 }
 
-function setLang(lang){
-  const cfg=getSettings();
-  cfg.lang=lang;
-  saveSettings(cfg);
-  render();
+function clearAllData(){
+  if(!confirm(t('confirm_clear_1')))return;
+  if(!confirm(t('confirm_clear_2')))return;
+  localStorage.removeItem(SK.weights);
+  localStorage.removeItem(SK.history);
+  localStorage.removeItem(SK.nextDay);
+  localStorage.removeItem(SK.blockStart);
+  localStorage.removeItem(SK.blockIdx);
+  localStorage.removeItem("il_settings");
+  localStorage.removeItem("il_profile");
+  A.history=[];
+  BLOCKS=[];
+  navigate("onboarding");
 }
 
 function navHTML(active){
   const items=[
-    {id:"home",icon:"🏠",label:t('nav_home')},
-    {id:"history",icon:"📋",label:t('nav_log')},
-    {id:"program",icon:"📅",label:t('nav_program')},
-    {id:"settings",icon:"⚙️",label:t('nav_settings')},
+    {id:"home",icon:"🏠",labelKey:"nav_home"},
+    {id:"history",icon:"📋",labelKey:"nav_log"},
+    {id:"program",icon:"📅",labelKey:"nav_program"},
+    {id:"settings",icon:"⚙️",labelKey:"nav_settings"},
   ];
   return`<nav class="nav">${items.map(it=>`
     <button class="nav-btn${active===it.id?' active':''}" onclick="navigate('${it.id}')">
-      ${it.icon}<span>${it.label}</span>
+      ${it.icon}<span>${t(it.labelKey)}</span>
     </button>`).join('')}</nav>`;
 }
 
@@ -1564,17 +2201,83 @@ function setPreviewBlock(idx){
   render();
 }
 
-function quitterWorkout(){
-  if(!confirm(t('quitter_confirm')))return;
-  finishWorkout(true);
+function cancelWorkout(){
+  const done=doneSets();
+  if(done>0){
+    quitWithoutCompleting();
+  }else{
+    if(!confirm(t('workout_cancel')))return;
+    stopElapsed();
+    clearTimeout(A._restTimeout);
+    A.restTimer=null;
+    A.sessionStart=null;
+    navigate("home");
+  }
 }
 
-function cancelWorkout(){
-  if(!confirm(t('cancel_confirm')))return;
+const _quitLines={
+  en:[
+    "Are you sure? The weights won't lift themselves.",
+    "Quitting? Your muscles just filed a complaint.",
+    "Leaving already? Even the dumbbells are disappointed.",
+    "Really? You were doing so well\u2026",
+    "Your future self just shed a single tear.",
+    "The iron remembers. It always remembers.",
+  ],
+  fi:[
+    "Oletko varma? Painot eivät nosta itseään.",
+    "Lopetat? Lihaksesi jättivät juuri valituksen.",
+    "Lähdetkö jo? Käsipainotkin ovat pettyneitä.",
+    "Oikeasti? Meni niin hyvin\u2026",
+    "Tuleva sinäsi vuodatti juuri kyyneleen.",
+    "Rauta muistaa. Se muistaa aina.",
+  ]
+};
+function quitWithoutCompleting(){
+  const lines=_quitLines[getLang()]||_quitLines.en;
+  const line=lines[Math.floor(Math.random()*lines.length)];
+  const modal=document.createElement('div');
+  modal.className='modal-overlay';
+  modal.id='quit-modal';
+  modal.innerHTML=`
+    <div class="modal-sheet" style="padding:28px 24px 36px;text-align:center">
+      <div style="font-size:48px;margin-bottom:12px">🏳️</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:#f2f0ea;margin-bottom:8px">${t('quit_title')}</div>
+      <div style="font-size:14px;color:#4a4a6a;margin-bottom:24px;line-height:1.5">${esc(line)}</div>
+      <div style="font-size:12px;color:#4a4a6a;margin-bottom:20px">${t('quit_save_info')}</div>
+      <button class="btn-primary" style="background:#ff4455;margin-bottom:10px" onclick="confirmQuit()">${t('quit_confirm')}</button>
+      <button class="btn-ghost" onclick="closeQuit()">${t('quit_keep')}</button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+function closeQuit(){
+  const m=document.getElementById('quit-modal');
+  if(m)m.remove();
+}
+function confirmQuit(){
+  closeQuit();
+  // Save partial session
+  const block=BLOCKS[A.blockIdx];
+  const day=block.days.find(d=>d.id===A.activeDayId);
+  const session={
+    id:Date.now(),
+    date:new Date().toISOString(),
+    blockId:block.id,blockLabel:block.label,
+    dayId:A.activeDayId,dayLabel:day?day.label:'',
+    duration:Math.round((Date.now()-A.sessionStart)/60000),
+    partial:true,
+    exercises:A.sessionExercises.map(ex=>({
+      id:ex.id,libId:ex.libId,name:ex.name,muscle:ex.muscle,
+      sets:(A.sessionSets[ex.id]||[]).filter(s=>s.done).map(s=>({reps:s.reps,weight:s.weight,done:s.done}))
+    })).filter(ex=>ex.sets.length>0)
+  };
+  if(session.exercises.length>0){
+    A.history=[...A.history,session];
+    ls.set(SK.history,A.history);
+  }
   stopElapsed();
-  clearTimeout(A._restInterval);
+  clearTimeout(A._restTimeout);
   A.restTimer=null;
-  A._restEnd=null;
   A.sessionStart=null;
   navigate("home");
 }
@@ -1582,16 +2285,30 @@ function cancelWorkout(){
 function render(){
   const app=document.getElementById('app');
   if(!app)return;
+  // Show onboarding if no profile
+  if(!getProfile()&&A.view!=='onboarding'){A.view='onboarding';}
   let html='';
-  if(A.view==='home')html=viewHome();
+  if(A.view==='onboarding')html=viewOnboarding();
+  else if(A.view==='home')html=viewHome();
   else if(A.view==='workout')html=viewWorkout();
   else if(A.view==='complete')html=viewComplete();
   else if(A.view==='history')html=viewHistory();
   else if(A.view==='program')html=viewProgram();
   else if(A.view==='settings')html=viewSettings();
   app.innerHTML=html;
-  // Re-attach rest bar state after workout render
+  // After render, bind kg inputs (oninput in HTML attr can't pass complex args)
   if(A.view==='workout'){
+    A.sessionExercises.forEach(ex=>{
+      (A.sessionSets[ex.id]||[]).forEach((_,idx)=>{
+        const el=document.getElementById(`kg-inp-${ex.id}-${idx}`);
+        if(el){
+          const exId=ex.id;
+          const i=idx;
+          el.oninput=function(){updateKg(exId,i,this.value);};
+        }
+      });
+    });
+    // Re-attach rest bar state
     refreshRestBar();
   }
 }
