@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#080810"/>
+  <rect x="16" y="16" width="480" height="480" rx="80" fill="none" stroke="#1c1c2e" stroke-width="2"/>
+  <!-- Barbell icon -->
+  <rect x="152" y="196" width="208" height="20" rx="10" fill="#e8ff47"/>
+  <rect x="152" y="296" width="208" height="20" rx="10" fill="#e8ff47"/>
+  <!-- Left plates -->
+  <rect x="120" y="168" width="32" height="176" rx="8" fill="#e8ff47"/>
+  <rect x="88" y="188" width="28" height="136" rx="6" fill="#e8ff47" opacity="0.6"/>
+  <!-- Right plates -->
+  <rect x="360" y="168" width="32" height="176" rx="8" fill="#e8ff47"/>
+  <rect x="396" y="188" width="28" height="136" rx="6" fill="#e8ff47" opacity="0.6"/>
+  <!-- Center bar -->
+  <rect x="240" y="186" width="32" height="140" rx="4" fill="#e8ff47" opacity="0.3"/>
+  <!-- Text -->
+  <text x="256" y="432" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="64" fill="#e8ff47" letter-spacing="8">RAUTALOKI</text>
+</svg>
