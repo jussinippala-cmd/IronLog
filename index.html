@@ -169,6 +169,10 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 .ob-profile-row{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:8px}
 .ob-profile-tag{background:#1c1c30;border-radius:8px;padding:4px 12px;font-size:12px;color:#9090b0;cursor:pointer}
 .ob-profile-tag:hover{color:#d4a846;border-color:#d4a846}
+.chart-pills{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.chart-pills::-webkit-scrollbar{display:none}
+.chart-pill{background:#1c1c30;border:1px solid #1c1c2e;border-radius:8px;padding:5px 12px;font-size:12px;color:#9090b0;white-space:nowrap;flex-shrink:0;font-family:inherit;cursor:pointer}
+.chart-pill.active{border-color:#d4a846;color:#d4a846;background:#1a1810}
 </style>
 </head>
 <body>
@@ -485,6 +489,7 @@ settings_how_4:"Double-tap 💪🏻",settings_how_4b:"on a completed set to edit
 settings_how_5:"⇄ Swap",settings_how_5b:"lets you swap any exercise for another in the same muscle group.",
 settings_how_6:"↑ LOAD",settings_how_6b:"means you hit top reps last time — try adding 2.5% weight.",
 settings_how_7:"Quit without completing",settings_how_7b:"saves your done sets to history.",
+chart_title:"Progress",chart_no_data:"Not enough data yet",
 // Onboarding view
 ob_tagline:"Your gym. Your rules.",ob_subtitle:"Set up your training plan in 2 taps.",
 ob_freq:"How many days per week?",ob_iam:"I am",ob_full_body:"Full Body",ob_upper_lower:"Upper/Lower",
@@ -703,6 +708,7 @@ settings_how_4:"Tuplanapauta 💪🏻",settings_how_4b:"muokataksesi tehtyä sar
 settings_how_5:"⇄ Vaihda",settings_how_5b:"vaihtaa liikkeen toiseen samasta lihasryhmästä.",
 settings_how_6:"↑ NOSTA",settings_how_6b:"tarkoittaa, että teit maksimireppit viimeksi — kokeile 2.5% lisäpainoa.",
 settings_how_7:"Lopeta kesken",settings_how_7b:"tallentaa tehdyt sarjat historiaan.",
+chart_title:"Kehitys",chart_no_data:"Ei vielä tarpeeksi dataa",
 // Onboarding view
 ob_tagline:"Sinun salisi. Sinun sääntösi.",ob_subtitle:"Aseta treeniohjelma kahdella napautuksella.",
 ob_freq:"Montako päivää viikossa?",ob_iam:"Olen",ob_full_body:"Koko keho",ob_upper_lower:"Ylä/ala",
@@ -1347,6 +1353,84 @@ function shouldIncrease(id,topRep,libId){
   const h=getExerciseHistory(id,libId);
   return h.length>0&&h[h.length-1].sets.every(s=>parseInt(s.reps)>=topRep);
 }
+function getExercisesWithHistory(){
+  const seen=new Map();
+  A.history.forEach(s=>{
+    (s.exercises||[]).forEach(ex=>{
+      if(!ex.libId||seen.has(ex.libId))return;
+      if((ex.sets||[]).some(st=>parseFloat(st.weight)>0))seen.set(ex.libId,true);
+    });
+  });
+  return[...seen.keys()];
+}
+function getProgressData(libId){
+  const points=[];
+  A.history.forEach(s=>{
+    const ex=(s.exercises||[]).find(e=>e.libId===libId);
+    if(!ex)return;
+    const wts=(ex.sets||[]).map(st=>parseFloat(st.weight)||0).filter(w=>w>0);
+    if(!wts.length)return;
+    points.push({date:s.date,max:Math.max(...wts)});
+  });
+  return points;
+}
+function renderProgressChart(libId){
+  const data=getProgressData(libId);
+  if(!data.length)return`<div style="text-align:center;color:#9090b0;font-size:13px;padding:20px 0">${t('chart_no_data')}</div>`;
+  const W=390,H=200,ml=45,mr=15,mt=15,mb=30;
+  const pw=W-ml-mr,ph=H-mt-mb;
+  if(data.length===1){
+    const cx=ml+pw/2,cy=mt+ph/2;
+    return`<svg viewBox="0 0 ${W} ${H}" width="100%" height="200" style="display:block">
+      <circle cx="${cx}" cy="${cy}" r="5" fill="#d4a846"/>
+      <text x="${cx}" y="${cy-14}" text-anchor="middle" fill="#f2f0ea" font-size="14" font-weight="700">${data[0].max}kg</text>
+      <text x="${cx}" y="${cy+20}" text-anchor="middle" fill="#9090b0" font-size="10">${fmtDate(data[0].date)}</text>
+    </svg>`;
+  }
+  const maxes=data.map(d=>d.max);
+  let yMin=Math.min(...maxes),yMax=Math.max(...maxes);
+  if(yMax-yMin<5){const mid=(yMin+yMax)/2;yMin=mid-2.5;yMax=mid+2.5;}
+  yMin=Math.floor(yMin/5)*5;yMax=Math.ceil(yMax/5)*5;
+  if(yMax<=yMin)yMax=yMin+5;
+  const yRange=yMax-yMin;
+  function x(i){return ml+(i/(data.length-1))*pw;}
+  function y(v){return mt+ph-(((v-yMin)/yRange)*ph);}
+  const pts=data.map((d,i)=>`${x(i).toFixed(1)},${y(d.max).toFixed(1)}`);
+  const line=pts.join(' ');
+  const area=`${pts.join(' ')} ${x(data.length-1).toFixed(1)},${(mt+ph).toFixed(1)} ${ml.toFixed(1)},${(mt+ph).toFixed(1)}`;
+  // Y-axis: 4-5 ticks
+  const tickCount=4;
+  let gridLines='',yLabels='';
+  for(let i=0;i<=tickCount;i++){
+    const val=yMin+(yRange*i/tickCount);
+    const yy=y(val);
+    gridLines+=`<line x1="${ml}" y1="${yy.toFixed(1)}" x2="${W-mr}" y2="${yy.toFixed(1)}" stroke="#1c1c2e" stroke-dasharray="4,4"/>`;
+    yLabels+=`<text x="${ml-6}" y="${(yy+3).toFixed(1)}" text-anchor="end" fill="#9090b0" font-size="10">${Math.round(val)}</text>`;
+  }
+  // X-axis: max 6 labels
+  let xLabels='';
+  const maxLabels=Math.min(6,data.length);
+  const step=Math.max(1,Math.floor((data.length-1)/(maxLabels-1)));
+  for(let i=0;i<data.length;i+=step){
+    xLabels+=`<text x="${x(i).toFixed(1)}" y="${H-4}" text-anchor="middle" fill="#9090b0" font-size="9">${fmtDate(data[i].date)}</text>`;
+  }
+  if((data.length-1)%step!==0){
+    xLabels+=`<text x="${x(data.length-1).toFixed(1)}" y="${H-4}" text-anchor="middle" fill="#9090b0" font-size="9">${fmtDate(data[data.length-1].date)}</text>`;
+  }
+  const dots=data.map((d,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(d.max).toFixed(1)}" r="3.5" fill="#d4a846" stroke="#10101a" stroke-width="2"/>`).join('');
+  return`<svg viewBox="0 0 ${W} ${H}" width="100%" height="200" style="display:block">
+    <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d4a846" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#d4a846" stop-opacity="0"/>
+    </linearGradient></defs>
+    ${gridLines}
+    <polygon points="${area}" fill="url(#cg)"/>
+    <polyline points="${line}" fill="none" stroke="#d4a846" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}
+    ${yLabels}
+    ${xLabels}
+  </svg>`;
+}
 function isThisISOWeek(dateStr){
   const d=new Date(dateStr),now=new Date();
   const day=now.getDay();
@@ -1376,6 +1460,8 @@ const A={
   restTimer:null,
   completedSession:null,
   swapTarget:null,
+  chartExercise:null,
+  _openSessions:new Set(),
   // Internal timers
   _elapsedInterval:null,
   _restInterval:null,
@@ -1938,13 +2024,29 @@ function viewComplete(){
   </div>`;
 }
 
+function selectChartExercise(libId){A.chartExercise=libId;render();}
+function toggleSession(i){if(A._openSessions.has(i))A._openSessions.delete(i);else A._openSessions.add(i);render();}
 function viewHistory(){
   const hist=[...A.history].reverse();
+  // Progress chart
+  let chartSection='';
+  const chartExList=getExercisesWithHistory();
+  if(chartExList.length>0){
+    if(!A.chartExercise||!chartExList.includes(A.chartExercise))A.chartExercise=chartExList[0];
+    const pills=chartExList.map(lid=>
+      `<button class="chart-pill${A.chartExercise===lid?' active':''}" onclick="selectChartExercise('${lid}')">${t(lid)}</button>`
+    ).join('');
+    chartSection=`<div class="card" style="margin-bottom:16px">
+      <div class="sec-title" style="margin-bottom:8px">${t('chart_title')}</div>
+      <div class="chart-pills">${pills}</div>
+      ${renderProgressChart(A.chartExercise)}
+    </div>`;
+  }
   let content='';
   if(!hist.length){
     content=`<div style="color:#9090b0;text-align:center;padding-top:40px">${t('history_empty')}</div>`;
   }else{
-    hist.forEach(session=>{
+    hist.forEach((session,si)=>{
       const vol=(session.exercises||[]).reduce((a,e)=>a+(e.sets||[]).reduce((b,st)=>b+(parseFloat(st.weight)||0)*(parseFloat(st.reps)||0),0),0);
       const ds=fmtDate(session.date);
       let exRows='';
@@ -1958,12 +2060,15 @@ function viewHistory(){
         </div>`;
       });
       const sessionDayLabel=session.dayLabel?t('day_'+session.dayLabel)||session.dayLabel:session.dayLabel;
-      content+=`<div class="card">
+      content+=`<div class="card" style="cursor:pointer" onclick="toggleSession(${si})">
         <div class="row">
           <div style="font-weight:700;font-size:15px">${esc(sessionDayLabel||'')}</div>
-          <div style="text-align:right">
-            <div style="font-size:11px;color:#d4a846;font-weight:700">${ds}</div>
-            ${session.blockLabel?`<div style="font-size:10px;color:#9090b0;margin-top:1px">${t('block_label')} ${session.blockId||''}</div>`:''}
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="text-align:right">
+              <div style="font-size:11px;color:#d4a846;font-weight:700">${ds}</div>
+              ${session.blockLabel?`<div style="font-size:10px;color:#9090b0;margin-top:1px">${t('block_label')} ${session.blockId||''}</div>`:''}
+            </div>
+            <div style="font-size:12px;color:#9090b0;transition:transform .2s;transform:rotate(${A._openSessions&&A._openSessions.has(si)?'180':'0'}deg)">▼</div>
           </div>
         </div>
         <div style="font-size:12px;color:#9090b0;margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
@@ -1972,7 +2077,7 @@ function viewHistory(){
           ${vol>0?`<span class="tag">${Math.round(vol)}kg ${t('history_vol')}</span>`:''}
           ${session.partial?`<span class="tag" style="color:#ff4455;border:1px solid #ff445533">${t('history_partial')}</span>`:''}
         </div>
-        <div>${exRows}</div>
+        ${A._openSessions&&A._openSessions.has(si)?`<div style="margin-top:6px">${exRows}</div>`:''}
       </div>`;
     });
   }
@@ -1980,6 +2085,7 @@ function viewHistory(){
   <div class="hdr"><div class="logo">RAUTALOKI</div></div>
   <div class="page">
     <div class="h2">${t('history_title')}</div>
+    ${chartSection}
     ${content}
   </div>
   ${navHTML("history")}`;
