@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/26402158/README.md)
 # Rautaloki
 
 > Your gym. Your rules.
@@ -9,8 +8,9 @@ A minimalist Progressive Web App (PWA) for tracking strength training workouts. 
 
 - **Workout tracking** — Log sets, reps, and weights in real time
 - **Program management** — Create and follow training blocks with multiple days
-- **Training history** — Review past sessions with progress charts
+- **Training history** — Review past sessions with progress charts, delete individual sessions
 - **Rest timer** — Configurable rest timer between sets
+- **Export / Import** — Download workout history as CSV or import from file
 - **Offline-first** — Works without internet via Service Worker
 - **Bilingual** — English and Finnish UI
 - **PWA** — Installable on iOS/Android home screen, runs fullscreen
@@ -38,7 +38,7 @@ icons/          # App icons (192px, 512px, Apple touch)
 
 ## Data
 
-All data is stored in the browser's `localStorage`. Nothing is sent anywhere. Clearing browser data will erase your workout history.
+All data is stored in the browser's `localStorage`. Nothing is sent anywhere. Clearing browser data will erase your workout history. Use **Settings → Export** to back up your data as CSV.
 
 ## License
 

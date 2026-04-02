@@ -82,10 +82,12 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 .progress-track{background:#10101a;border-radius:99px;height:5px;margin-bottom:20px;overflow:hidden}
 .progress-fill{background:#d4a846;height:100%;border-radius:99px;transition:width .4s ease}
 /* Rest bar */
-.rest-bar{position:fixed;bottom:calc(52px + max(22px,env(safe-area-inset-bottom,22px)));left:50%;transform:translateX(-50%);width:100%;max-width:430px;
-  background:#0a0a18ee;backdrop-filter:blur(10px);z-index:200;padding:14px 20px;
-  display:none;justify-content:space-between;align-items:center;border-top:1px solid #1c1c2e}
-.rest-bar.visible{display:flex}
+.rest-bar{position:fixed;bottom:calc(60px + max(22px,env(safe-area-inset-bottom,22px)));left:50%;transform:translateX(-50%);
+  width:80%;max-width:350px;height:20vh;min-height:120px;
+  background:#0c0c1af0;backdrop-filter:blur(16px);z-index:200;padding:20px 24px;
+  display:none;flex-direction:column;justify-content:center;align-items:center;gap:16px;
+  border:1px solid #d4a84655;border-radius:20px;box-shadow:0 8px 32px #00000088}
+.rest-bar.visible{display:flex;animation:pop .3s ease}
 /* Exercise card header */
 .ex-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
 .ex-title-area{flex:1}
@@ -489,7 +491,9 @@ settings_how_4:"Double-tap 💪🏻",settings_how_4b:"on a completed set to edit
 settings_how_5:"⇄ Swap",settings_how_5b:"lets you swap any exercise for another in the same muscle group.",
 settings_how_6:"↑ LOAD",settings_how_6b:"means you hit top reps last time — try adding 2.5% weight.",
 settings_how_7:"Quit without completing",settings_how_7b:"saves your done sets to history.",
+history_delete:"Delete",history_delete_confirm:"Delete this session from history?",
 chart_title:"Progress",chart_no_data:"Not enough data yet",
+settings_export:"Export History (CSV)",settings_import:"Import History (CSV)",settings_import_done:"Imported",settings_import_sessions:"sessions",settings_import_error:"Invalid CSV file",settings_export_import:"Export / Import",
 // Onboarding view
 ob_tagline:"Your gym. Your rules.",ob_subtitle:"Set up your training plan in 2 taps.",
 ob_freq:"How many days per week?",ob_iam:"I am",ob_full_body:"Full Body",ob_upper_lower:"Upper/Lower",
@@ -708,7 +712,9 @@ settings_how_4:"Tuplanapauta 💪🏻",settings_how_4b:"muokataksesi tehtyä sar
 settings_how_5:"⇄ Vaihda",settings_how_5b:"vaihtaa liikkeen toiseen samasta lihasryhmästä.",
 settings_how_6:"↑ NOSTA",settings_how_6b:"tarkoittaa, että teit maksimireppit viimeksi — kokeile 2.5% lisäpainoa.",
 settings_how_7:"Lopeta kesken",settings_how_7b:"tallentaa tehdyt sarjat historiaan.",
+history_delete:"Poista",history_delete_confirm:"Poistetaanko tämä treeni historiasta?",
 chart_title:"Kehitys",chart_no_data:"Ei vielä tarpeeksi dataa",
+settings_export:"Vie historia (CSV)",settings_import:"Tuo historia (CSV)",settings_import_done:"Tuotiin",settings_import_sessions:"treeniä",settings_import_error:"Virheellinen CSV-tiedosto",settings_export_import:"Vienti / Tuonti",
 // Onboarding view
 ob_tagline:"Sinun salisi. Sinun sääntösi.",ob_subtitle:"Aseta treeniohjelma kahdella napautuksella.",
 ob_freq:"Montako päivää viikossa?",ob_iam:"Olen",ob_full_body:"Koko keho",ob_upper_lower:"Ylä/ala",
@@ -1984,8 +1990,8 @@ function viewWorkout(){
     ${someStarted?`<button class="btn-ghost" style="margin-top:10px;color:#9090b0;border-color:#1c1c2e" onclick="quitWithoutCompleting()">${t('workout_quit')}</button>`:''}
   </div>
   <div id="rest-bar" class="rest-bar">
-    <div id="rest-time" class="rest-pulse" style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:#d4a846">${t('workout_rest')} · 1:30</div>
-    <button class="btn-tiny" style="color:#d4a846;border-color:#d4a846" onclick="skipRest()">${t('workout_skip')}</button>
+    <div id="rest-time" class="rest-pulse" style="font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:900;color:#d4a846;letter-spacing:.04em">${t('workout_rest')} · 1:30</div>
+    <button class="btn-tiny" style="color:#d4a846;border-color:#d4a846;padding:10px 24px;font-size:14px;font-weight:700" onclick="skipRest()">${t('workout_skip')}</button>
   </div>`;
 }
 
@@ -2077,7 +2083,9 @@ function viewHistory(){
           ${vol>0?`<span class="tag">${Math.round(vol)}kg ${t('history_vol')}</span>`:''}
           ${session.partial?`<span class="tag" style="color:#ff4455;border:1px solid #ff445533">${t('history_partial')}</span>`:''}
         </div>
-        ${A._openSessions&&A._openSessions.has(si)?`<div style="margin-top:6px">${exRows}</div>`:''}
+        ${A._openSessions&&A._openSessions.has(si)?`<div style="margin-top:6px">${exRows}
+          <button class="btn-tiny" style="color:#ff4455;border-color:#ff445533;margin-top:12px" onclick="event.stopPropagation();deleteSession(${hist.length-1-si})">${t('history_delete')}</button>
+        </div>`:''}
       </div>`;
     });
   }
@@ -2288,6 +2296,12 @@ function viewSettings(){
 
     ${howToUse}
 
+    <div class="sec-title" style="margin-top:20px">${t('settings_export_import')}</div>
+    <div class="card">
+      <button class="btn-ghost" style="margin-bottom:8px;color:#d4a846;border-color:#d4a84644" onclick="exportCSV()">${t('settings_export')}</button>
+      <button class="btn-ghost" style="color:#9090b0;border-color:#1c1c2e" onclick="importCSV()">${t('settings_import')}</button>
+    </div>
+
     <div class="sec-title" style="margin-top:20px">${t('settings_data')}</div>
     <div class="card">
       <button class="btn-ghost" style="color:#ff4455;border-color:#ff445533;margin-bottom:8px" onclick="clearAllData()">${t('settings_reset')}</button>
@@ -2314,6 +2328,65 @@ function toggleRestTimer(on){
   render();
 }
 
+function deleteSession(idx){
+  if(!confirm(t('history_delete_confirm')))return;
+  A.history.splice(idx,1);
+  ls.set(SK.history,A.history);
+  A._openSessions.clear();
+  render();
+}
+function exportCSV(){
+  const rows=[['Date','Day','Block','Exercise','Set','Reps','Weight(kg)','Duration(min)','Partial']];
+  A.history.forEach(s=>{
+    (s.exercises||[]).forEach(ex=>{
+      (ex.sets||[]).forEach((st,si)=>{
+        rows.push([s.date,s.dayLabel||s.dayId,s.blockId||'',ex.name||ex.libId,si+1,st.reps,st.weight,s.duration,s.partial?'yes':'']);
+      });
+    });
+  });
+  const csv=rows.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`rautaloki_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function importCSV(){
+  const input=document.createElement('input');
+  input.type='file';input.accept='.csv';
+  input.onchange=e=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const lines=ev.target.result.split('\n').filter(l=>l.trim());
+        if(lines.length<2)throw 0;
+        const hdr=lines[0];
+        const sessions={};
+        for(let i=1;i<lines.length;i++){
+          const cols=[];
+          let m,re=/(".*?"|[^,]*)(,|$)/g;
+          while((m=re.exec(lines[i]))!==null){cols.push(m[1]);if(m[2]==='')break;}
+          const clean=cols.map(c=>c.replace(/^"|"$/g,'').replace(/""/g,'"'));
+          const [date,day,block,exName,setNum,reps,weight,duration,partial]=clean;
+          const key=date+'|'+day+'|'+block;
+          if(!sessions[key])sessions[key]={id:Date.now()+i,date,dayId:day,dayLabel:day,blockId:block,blockLabel:block,
+            duration:parseInt(duration)||0,partial:partial==='yes',exercises:{}};
+          if(!sessions[key].exercises[exName])sessions[key].exercises[exName]={id:exName,libId:exName,name:exName,muscle:'',sets:[]};
+          sessions[key].exercises[exName].sets.push({reps:reps||'',weight:weight||'',done:true});
+        }
+        const imported=Object.values(sessions).map(s=>({...s,exercises:Object.values(s.exercises)}));
+        A.history=[...A.history,...imported];
+        ls.set(SK.history,A.history);
+        alert(`${t('settings_import_done')} ${imported.length} ${t('settings_import_sessions')}`);
+        render();
+      }catch(err){alert(t('settings_import_error'));}
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
 function clearAllData(){
   if(!confirm(t('confirm_clear_1')))return;
   if(!confirm(t('confirm_clear_2')))return;
