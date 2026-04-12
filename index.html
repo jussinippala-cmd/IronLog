@@ -1575,6 +1575,35 @@ function startWorkout(dayId,block){
   navigate("workout");
 }
 
+function openFreeBuilder(){
+  A.freeExerciseIds=[];
+  A.freeFilter="All";
+  navigate("freeBuilder");
+}
+function toggleFreeExercise(libId){
+  if(A.freeExerciseIds.includes(libId)){
+    A.freeExerciseIds=A.freeExerciseIds.filter(id=>id!==libId);
+  }else{
+    A.freeExerciseIds=[...A.freeExerciseIds,libId];
+  }
+  render();
+}
+function setFreeFilter(muscle){
+  A.freeFilter=muscle;
+  render();
+}
+function startFreeWorkout(exerciseIds){
+  A.sessionExercises=exerciseIds.map(libId=>Ex(0,libId)).filter(Boolean);
+  A.sessionSets=buildInitialSets(A.sessionExercises);
+  A.sessionStart=Date.now();
+  A.elapsed=0;
+  A.restTimer=null;
+  A.isFreeWorkout=true;
+  A.freeExerciseIds=[];
+  clearInterval(A._restInterval);A._restEndTime=null;
+  startElapsed();
+  navigate("workout");
+}
 function swapExercise(oldId,newEx){
   closeSwap();
   A.sessionExercises=A.sessionExercises.map(e=>e.id===oldId?{...newEx}:e);
