@@ -1682,30 +1682,35 @@ function updateKg(exId,idx,val){
 
 function finishWorkout(){
   if(!allDone())return;
+  const isFree=A.isFreeWorkout;
   const block=BLOCKS[A.blockIdx];
-  const day=block.days.find(d=>d.id===A.activeDayId);
   const session={
     id:Date.now(),
     date:new Date().toISOString(),
-    blockId:block.id,blockLabel:block.label,
-    dayId:A.activeDayId,dayLabel:day.label,
+    blockId:isFree?"free":block.id,
+    blockLabel:isFree?"Free":block.label,
+    dayId:isFree?"free":A.activeDayId,
+    dayLabel:isFree?"Vapaa harjoitus":(block.days.find(d=>d.id===A.activeDayId)||{label:A.activeDayId}).label,
     duration:Math.round((Date.now()-A.sessionStart)/60000),
     exercises:A.sessionExercises.map(ex=>({
       id:ex.id,libId:ex.libId,name:ex.name,muscle:ex.muscle,
       sets:(A.sessionSets[ex.id]||[]).map(s=>({reps:s.reps,weight:s.weight,done:s.done}))
     }))
   };
-  A.history=[...A.history,session];
-  ls.set(SK.history,A.history);
-  advanceDay(A.activeDayId);
   stopElapsed();
   clearInterval(A._restInterval);A._restEndTime=null;
   A.restTimer=null;
-  // Check if block should advance based on session count
+  A.completedSession=session;
+  if(isFree){
+    navigate("freeComplete");
+    return;
+  }
+  A.history=[...A.history,session];
+  ls.set(SK.history,A.history);
+  advanceDay(A.activeDayId);
   A.blockIdx=advanceBlockIfNeeded();
   A.previewBlockIdx=A.blockIdx;
   A.activeDayId=getNextDayId();
-  A.completedSession=session;
   navigate("complete");
 }
 
@@ -2484,6 +2489,7 @@ function cancelWorkout(){
     clearInterval(A._restInterval);A._restEndTime=null;
     A.restTimer=null;
     A.sessionStart=null;
+    A.isFreeWorkout=false;
     navigate("home");
   }
 }
@@ -2530,13 +2536,14 @@ function closeQuit(){
 function confirmQuit(){
   closeQuit();
   // Save partial session
+  const isFree=A.isFreeWorkout;
   const block=BLOCKS[A.blockIdx];
-  const day=block.days.find(d=>d.id===A.activeDayId);
+  const day=isFree?null:block.days.find(d=>d.id===A.activeDayId);
   const session={
     id:Date.now(),
     date:new Date().toISOString(),
-    blockId:block.id,blockLabel:block.label,
-    dayId:A.activeDayId,dayLabel:day?day.label:'',
+    blockId:isFree?"free":block.id,blockLabel:isFree?"Free":block.label,
+    dayId:isFree?"free":A.activeDayId,dayLabel:isFree?"Vapaa harjoitus":day?day.label:'',
     duration:Math.round((Date.now()-A.sessionStart)/60000),
     partial:true,
     exercises:A.sessionExercises.map(ex=>({
@@ -2552,6 +2559,7 @@ function confirmQuit(){
   clearInterval(A._restInterval);A._restEndTime=null;
   A.restTimer=null;
   A.sessionStart=null;
+  A.isFreeWorkout=false;
   navigate("home");
 }
 
