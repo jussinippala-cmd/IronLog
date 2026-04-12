@@ -2555,6 +2555,42 @@ function confirmQuit(){
   navigate("home");
 }
 
+function viewFreeBuilder(){
+  const muscles=["All",...Object.keys(LIBRARY)];
+  const pillsHTML=muscles.map(m=>`<button class="free-pill${A.freeFilter===m?' active':''}" onclick="setFreeFilter('${m}')">${m==='All'?'Kaikki':m}</button>`).join('');
+  const filtered=A.freeFilter==="All"
+    ?Object.entries(LIBRARY).flatMap(([muscle,exs])=>exs.map(e=>({...e,muscle})))
+    :(LIBRARY[A.freeFilter]||[]).map(e=>({...e,muscle:A.freeFilter}));
+  const listHTML=filtered.map(e=>{
+    const sel=A.freeExerciseIds.includes(e.id);
+    return`<div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;${sel?'background:#1a3a1a;border:1px solid #2d6b2d;':''}" onclick="toggleFreeExercise('${e.id}')">
+      <div>
+        <div style="font-weight:600;font-size:14px">${esc(e.name)}</div>
+        <div style="font-size:11px;color:#9090b0">${e.sets} × ${e.repRange[0]}–${e.repRange[1]} · ${e.muscle}</div>
+      </div>
+      <span style="font-size:${sel?18:22}px;color:${sel?'#4caf50':'#d4a846'}">${sel?'✓':'＋'}</span>
+    </div>`;
+  }).join('');
+  const selectedHTML=A.freeExerciseIds.length>0?`
+    <div style="background:#1a1a2e;border-radius:10px;padding:12px;margin-bottom:14px;border:1px solid #333;">
+      <div style="color:#d4a846;font-size:12px;font-weight:700;margin-bottom:8px">VALITUT (${A.freeExerciseIds.length})</div>
+      ${A.freeExerciseIds.map((id,i)=>{const b=_libFind(id);return`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span style="font-size:13px">${i+1}. ${esc(b?b.name:id)}</span><span style="color:#888;font-size:18px;cursor:pointer;" onclick="event.stopPropagation();toggleFreeExercise('${id}')">✕</span></div>`;}).join('')}
+    </div>`:'';
+  return`
+  <div class="hdr">
+    <div style="display:flex;align-items:center;gap:10px">
+      <button style="background:none;border:none;color:#9090b0;font-size:22px;cursor:pointer;padding:0" onclick="navigate('home')">←</button>
+      <div class="logo" style="font-size:16px">Rakenna harjoitus</div>
+    </div>
+  </div>
+  <div class="page">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">${pillsHTML}</div>
+    ${listHTML}
+    ${selectedHTML}
+    <button class="btn-primary" ${A.freeExerciseIds.length===0?'disabled':''} onclick="startFreeWorkout(A.freeExerciseIds)">▶ Aloita harjoitus (${A.freeExerciseIds.length})</button>
+  </div>`;
+}
+
 function render(){
   const app=document.getElementById('app');
   if(!app)return;
@@ -2568,6 +2604,7 @@ function render(){
   else if(A.view==='history')html=viewHistory();
   else if(A.view==='program')html=viewProgram();
   else if(A.view==='settings')html=viewSettings();
+  else if(A.view==='freeBuilder')html=viewFreeBuilder();
   app.innerHTML=html;
   // After render, bind kg inputs (oninput in HTML attr can't pass complex args)
   if(A.view==='workout'){
