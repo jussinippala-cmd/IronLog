@@ -53,6 +53,8 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 .btn-primary{background:#d4a846;color:#080810;border:none;border-radius:14px;padding:17px 24px;
   font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;letter-spacing:.06em;width:100%}
 .btn-primary:disabled{opacity:.35;cursor:default}
+.free-pill{background:#1c1c2e;color:#9090b0;border:none;border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit}
+.free-pill.active{background:#d4a846;color:#080810;font-weight:700}
 .btn-ghost{background:transparent;color:#f2f0ea;border:1px solid #1c1c2e;border-radius:14px;
   padding:13px 24px;font-weight:600;font-size:14px;width:100%}
 .btn-back{background:none;border:none;color:#d4a846;font-weight:700;font-size:13px;padding:0}
@@ -271,7 +273,7 @@ const LIBRARY={
 // ═══════════════════════════════════════════════════════════════════
 // STORAGE (must be first — everything else depends on ls)
 // ═══════════════════════════════════════════════════════════════════
-const SK={weights:"il_weights",history:"il_history",nextDay:"il_nextDay",blockStart:"il_blockStart",blockIdx:"il_blockIdx"};
+const SK={weights:"il_weights",history:"il_history",nextDay:"il_nextDay",blockStart:"il_blockStart",blockIdx:"il_blockIdx",customWorkouts:"il_custom_workouts"};
 const ls={
   get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch{return null;}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
@@ -1344,6 +1346,15 @@ function advanceBlockIfNeeded(){
 }
 function getNextDayId(){return ls.get(SK.nextDay)||"A";}
 function getHistory(){return ls.get(SK.history)||[];}
+function getCustomWorkouts(){return ls.get(SK.customWorkouts)||[];}
+function saveCustomWorkout(name,exerciseIds){
+  const list=getCustomWorkouts();
+  list.push({id:"custom_"+Date.now(),name:name,exerciseIds:exerciseIds,createdAt:Date.now()});
+  ls.set(SK.customWorkouts,list);
+}
+function deleteCustomWorkout(id){
+  ls.set(SK.customWorkouts,getCustomWorkouts().filter(w=>w.id!==id));
+}
 function getLastWeight(id){const w=(ls.get(SK.weights)||{})[id];return w!==undefined?w:null;}
 function saveWeight(id,w,libId){const ws=ls.get(SK.weights)||{};ws[id]=w;if(libId)ws[libId]=w;ls.set(SK.weights,ws);}
 function advanceDay(cur){
@@ -1465,6 +1476,9 @@ const A={
   elapsed:0,
   restTimer:null,
   completedSession:null,
+  freeExerciseIds:[],
+  freeFilter:"All",
+  isFreeWorkout:false,
   swapTarget:null,
   chartExercise:null,
   _openSessions:new Set(),
