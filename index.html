@@ -2591,6 +2591,60 @@ function viewFreeBuilder(){
   </div>`;
 }
 
+function viewFreeComplete(){
+  return`
+  <div class="hdr"><div class="logo">RAUTALOKI</div></div>
+  <div class="page">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:64px">🏋</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:900;color:#d4a846;margin-top:8px">Harjoitus valmis!</div>
+    </div>
+    <div class="scard" style="margin-bottom:12px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px">Haluatko tallentaa tämän harjoituksen mallipohjana?</div>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:10px">
+        <input type="checkbox" id="free-save-cb" style="width:18px;height:18px" onchange="document.getElementById('free-name-row').style.display=this.checked?'block':'none'">
+        <span style="font-size:14px">Kyllä, tallenna</span>
+      </label>
+      <div id="free-name-row" style="display:none">
+        <input id="free-name-inp" type="text" style="width:100%;box-sizing:border-box;background:#0a0a18;border:1px solid #333;border-radius:8px;color:#f2f0ea;padding:10px;font-size:14px;font-family:inherit" placeholder="Harjoituksen nimi" value="">
+      </div>
+    </div>
+    <div class="scard" style="margin-bottom:20px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px">Lasketaanko tämä ohjelman etenemiseen?</div>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+        <input type="checkbox" id="free-count-cb" style="width:18px;height:18px">
+        <span style="font-size:14px">Kyllä, laske etenemiseen</span>
+      </label>
+    </div>
+    <button class="btn-primary" onclick="confirmFreeWorkout()">Jatka →</button>
+  </div>`;
+}
+function confirmFreeWorkout(){
+  const saveCb=document.getElementById('free-save-cb');
+  const nameInp=document.getElementById('free-name-inp');
+  const countCb=document.getElementById('free-count-cb');
+  const wantsCount=countCb&&countCb.checked;
+  const s=A.completedSession;
+  if(s){
+    // Assign blockId based on progression choice
+    s.blockId=wantsCount?BLOCKS[A.blockIdx].id:"free";
+    s.blockLabel=wantsCount?BLOCKS[A.blockIdx].label:"Free";
+    A.history=[...A.history,s];
+    ls.set(SK.history,A.history);
+  }
+  if(saveCb&&saveCb.checked&&s){
+    const name=(nameInp&&nameInp.value.trim())||'Vapaa harjoitus';
+    saveCustomWorkout(name,s.exercises.map(e=>e.libId).filter(Boolean));
+  }
+  if(wantsCount){
+    advanceDay(A.activeDayId);
+    A.blockIdx=advanceBlockIfNeeded();
+    A.previewBlockIdx=A.blockIdx;
+    A.activeDayId=getNextDayId();
+  }
+  A.isFreeWorkout=false;
+  navigate("complete");
+}
 function render(){
   const app=document.getElementById('app');
   if(!app)return;
@@ -2605,6 +2659,7 @@ function render(){
   else if(A.view==='program')html=viewProgram();
   else if(A.view==='settings')html=viewSettings();
   else if(A.view==='freeBuilder')html=viewFreeBuilder();
+  else if(A.view==='freeComplete')html=viewFreeComplete();
   app.innerHTML=html;
   // After render, bind kg inputs (oninput in HTML attr can't pass complex args)
   if(A.view==='workout'){
