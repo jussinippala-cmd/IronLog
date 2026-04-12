@@ -273,7 +273,7 @@ const LIBRARY={
 // ═══════════════════════════════════════════════════════════════════
 // STORAGE (must be first — everything else depends on ls)
 // ═══════════════════════════════════════════════════════════════════
-const SK={weights:"il_weights",history:"il_history",nextDay:"il_nextDay",blockStart:"il_blockStart",blockIdx:"il_blockIdx",customWorkouts:"il_custom_workouts"};
+const SK={weights:"il_weights",history:"il_history",nextDay:"il_nextDay",blockStart:"il_blockStart",blockIdx:"il_blockIdx",customWorkouts:"il_customworkouts"};
 const ls={
   get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch{return null;}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
@@ -1349,7 +1349,8 @@ function getHistory(){return ls.get(SK.history)||[];}
 function getCustomWorkouts(){return ls.get(SK.customWorkouts)||[];}
 function saveCustomWorkout(name,exerciseIds){
   const list=getCustomWorkouts();
-  list.push({id:"custom_"+Date.now(),name:name,exerciseIds:exerciseIds,createdAt:Date.now()});
+  const now=Date.now();
+  list.push({id:"custom_"+now,name:name,exerciseIds:exerciseIds,createdAt:now});
   ls.set(SK.customWorkouts,list);
 }
 function deleteCustomWorkout(id){
@@ -2409,6 +2410,7 @@ function clearAllData(){
   localStorage.removeItem(SK.nextDay);
   localStorage.removeItem(SK.blockStart);
   localStorage.removeItem(SK.blockIdx);
+  localStorage.removeItem(SK.customWorkouts);
   localStorage.removeItem("il_settings");
   localStorage.removeItem("il_profile");
   A.history=[];
