@@ -1356,6 +1356,11 @@ function saveCustomWorkout(name,exerciseIds){
 function deleteCustomWorkout(id){
   ls.set(SK.customWorkouts,getCustomWorkouts().filter(w=>w.id!==id));
 }
+function confirmDeleteCustomWorkout(id){
+  const cw=getCustomWorkouts().find(w=>w.id===id);
+  if(!cw)return;
+  if(confirm('Poistetaanko '+cw.name+'?')){deleteCustomWorkout(id);render();}
+}
 function getLastWeight(id){const w=(ls.get(SK.weights)||{})[id];return w!==undefined?w:null;}
 function saveWeight(id,w,libId){const ws=ls.get(SK.weights)||{};ws[id]=w;if(libId)ws[libId]=w;ls.set(SK.weights,ws);}
 function advanceDay(cur){
@@ -1497,7 +1502,7 @@ function startElapsed(){
   A._elapsedInterval=setInterval(()=>{
     A.elapsed=Math.floor((Date.now()-A.sessionStart)/1000);
     const el=document.getElementById('elapsed-txt');
-    if(el)el.textContent=`${t('block_label')} ${BLOCKS[A.blockIdx].id} · ${t('home_day')} ${A.activeDayId} · ${fmtTime(A.elapsed)}`;
+    if(el)el.textContent=A.isFreeWorkout?`Vapaa harjoitus · ${fmtTime(A.elapsed)}`:`${t('block_label')} ${BLOCKS[A.blockIdx].id} · ${t('home_day')} ${A.activeDayId} · ${fmtTime(A.elapsed)}`;
   },1000);
 }
 function stopElapsed(){clearInterval(A._elapsedInterval);A.elapsed=0;}
@@ -1542,7 +1547,7 @@ document.addEventListener('visibilitychange',()=>{
       A.elapsed=Math.floor((Date.now()-A.sessionStart)/1000);
       const el=document.getElementById('elapsed-txt');
       const blk=BLOCKS[A.blockIdx];
-      if(el&&blk)el.textContent=`${t('block_label')} ${blk.id} · ${t('home_day')} ${A.activeDayId} · ${fmtTime(A.elapsed)}`;
+      if(el)el.textContent=A.isFreeWorkout?`Vapaa harjoitus · ${fmtTime(A.elapsed)}`:(blk?`${t('block_label')} ${blk.id} · ${t('home_day')} ${A.activeDayId} · ${fmtTime(A.elapsed)}`:'');
     }
   }
 });
@@ -1593,6 +1598,7 @@ function setFreeFilter(muscle){
   render();
 }
 function startFreeWorkout(exerciseIds){
+  if(!exerciseIds||!exerciseIds.length)return;
   A.sessionExercises=exerciseIds.map(libId=>Ex(0,libId)).filter(Boolean);
   A.sessionSets=buildInitialSets(A.sessionExercises);
   A.sessionStart=Date.now();
@@ -2018,7 +2024,7 @@ function viewHome(){
             <div style="font-weight:600;font-size:14px">▶ ${esc(cw.name)}</div>
             <div style="font-size:11px;color:#9090b0">${cw.exerciseIds.length} liikettä</div>
           </div>
-          <span style="color:#888;font-size:18px;padding:4px 8px;cursor:pointer" onclick="event.stopPropagation();if(confirm('Poistetaanko ${esc(cw.name)}?')){deleteCustomWorkout('${cw.id}');render();}">🗑</span>
+          <span style="color:#888;font-size:18px;padding:4px 8px;cursor:pointer" onclick="event.stopPropagation();confirmDeleteCustomWorkout('${cw.id}')">🗑</span>
         </div>`).join('');
       return`<div class="sec-title" style="margin-top:20px">Omat harjoitukset</div>${listHTML}`;
     })()}
@@ -2064,7 +2070,7 @@ function viewComplete(){
   const vol=s.exercises.reduce((a,e)=>a+e.sets.reduce((b,st)=>b+(parseFloat(st.weight)||0)*(parseFloat(st.reps)||0),0),0);
   const curBlock=BLOCKS[A.blockIdx]||BLOCKS[0];
   const nd=curBlock?curBlock.days.find(d=>d.id===getNextDayId()):null;
-  const blockSwapped=curBlock&&curBlock.id!==s.blockId;
+  const blockSwapped=curBlock&&curBlock.id!==s.blockId&&s.blockId!=="free";
   const swapNote=blockSwapped?`
     <div class="scard" style="margin-bottom:16px">
       <div style="font-size:12px;font-weight:700;color:#e8c55a;margin-bottom:4px;text-transform:uppercase;letter-spacing:.1em">🔄 ${t('complete_switch')}</div>
