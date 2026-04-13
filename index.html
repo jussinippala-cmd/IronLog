@@ -510,6 +510,15 @@ confirm_clear_1:"This will permanently delete ALL your workout history, saved we
 confirm_clear_2:"Really? This cannot be undone.",
 // Block label
 block_label:"Block",
+// Free workout builder
+free_build_title:"Build Workout",free_all:"All",free_selected:"SELECTED",
+free_start_btn:"▶ Start Workout",free_workout_label:"Free Workout",
+free_open_builder:"✏️ Build your own workout",free_my_workouts:"My Workouts",
+free_exercises:"exercises",free_delete_confirm:"Delete",
+free_complete_title:"Workout done!",free_save_as_template:"Save this workout as a template?",
+free_save_yes:"Yes, save",free_name_placeholder:"Workout name",
+free_count_progress:"Count this toward program progress?",free_count_yes:"Yes, count toward progress",
+free_continue:"Continue →",
 },
 fi:{
 // Exercise names
@@ -731,6 +740,15 @@ confirm_clear_1:"Tämä poistaa pysyvästi KAIKEN treenihistorian, tallennetut p
 confirm_clear_2:"Oikeasti? Tätä ei voi peruuttaa.",
 // Block label
 block_label:"Blokki",
+// Free workout builder
+free_build_title:"Rakenna harjoitus",free_all:"Kaikki",free_selected:"VALITUT",
+free_start_btn:"▶ Aloita harjoitus",free_workout_label:"Vapaa harjoitus",
+free_open_builder:"✏️ Rakenna oma harjoitus",free_my_workouts:"Omat harjoitukset",
+free_exercises:"liikettä",free_delete_confirm:"Poistetaanko",
+free_complete_title:"Harjoitus valmis!",free_save_as_template:"Haluatko tallentaa tämän harjoituksen mallipohjana?",
+free_save_yes:"Kyllä, tallenna",free_name_placeholder:"Harjoituksen nimi",
+free_count_progress:"Lasketaanko tämä ohjelman etenemiseen?",free_count_yes:"Kyllä, laske etenemiseen",
+free_continue:"Jatka →",
 }
 };
 
@@ -1359,7 +1377,7 @@ function deleteCustomWorkout(id){
 function confirmDeleteCustomWorkout(id){
   const cw=getCustomWorkouts().find(w=>w.id===id);
   if(!cw)return;
-  if(confirm('Poistetaanko '+cw.name+'?')){deleteCustomWorkout(id);render();}
+  if(confirm(t('free_delete_confirm')+' '+cw.name+'?')){deleteCustomWorkout(id);render();}
 }
 function getLastWeight(id){const w=(ls.get(SK.weights)||{})[id];return w!==undefined?w:null;}
 function saveWeight(id,w,libId){const ws=ls.get(SK.weights)||{};ws[id]=w;if(libId)ws[libId]=w;ls.set(SK.weights,ws);}
@@ -1502,7 +1520,7 @@ function startElapsed(){
   A._elapsedInterval=setInterval(()=>{
     A.elapsed=Math.floor((Date.now()-A.sessionStart)/1000);
     const el=document.getElementById('elapsed-txt');
-    if(el)el.textContent=A.isFreeWorkout?`Vapaa harjoitus · ${fmtTime(A.elapsed)}`:`${t('block_label')} ${BLOCKS[A.blockIdx].id} · ${t('home_day')} ${A.activeDayId} · ${fmtTime(A.elapsed)}`;
+    if(el)el.textContent=A.isFreeWorkout?`${t('free_workout_label')} · ${fmtTime(A.elapsed)}`:`${t('block_label')} ${BLOCKS[A.blockIdx].id} · ${t('home_day')} ${A.activeDayId} · ${fmtTime(A.elapsed)}`;
   },1000);
 }
 function stopElapsed(){clearInterval(A._elapsedInterval);A.elapsed=0;}
@@ -1547,7 +1565,7 @@ document.addEventListener('visibilitychange',()=>{
       A.elapsed=Math.floor((Date.now()-A.sessionStart)/1000);
       const el=document.getElementById('elapsed-txt');
       const blk=BLOCKS[A.blockIdx];
-      if(el)el.textContent=A.isFreeWorkout?`Vapaa harjoitus · ${fmtTime(A.elapsed)}`:(blk?`${t('block_label')} ${blk.id} · ${t('home_day')} ${A.activeDayId} · ${fmtTime(A.elapsed)}`:'');
+      if(el)el.textContent=A.isFreeWorkout?`${t('free_workout_label')} · ${fmtTime(A.elapsed)}`:(blk?`${t('block_label')} ${blk.id} · ${t('home_day')} ${A.activeDayId} · ${fmtTime(A.elapsed)}`:'');
     }
   }
 });
@@ -1689,14 +1707,14 @@ function updateKg(exId,idx,val){
 function finishWorkout(){
   if(!allDone())return;
   const isFree=A.isFreeWorkout;
-  const block=BLOCKS[A.blockIdx];
+  const block=BLOCKS[A.blockIdx]||BLOCKS[0];
   const session={
     id:Date.now(),
     date:new Date().toISOString(),
     blockId:isFree?"free":block.id,
     blockLabel:isFree?"Free":block.label,
     dayId:isFree?"free":A.activeDayId,
-    dayLabel:isFree?"Vapaa harjoitus":(block.days.find(d=>d.id===A.activeDayId)||{label:A.activeDayId}).label,
+    dayLabel:isFree?t('free_workout_label'):(block.days.find(d=>d.id===A.activeDayId)||{label:A.activeDayId}).label,
     duration:Math.round((Date.now()-A.sessionStart)/60000),
     exercises:A.sessionExercises.map(ex=>({
       id:ex.id,libId:ex.libId,name:ex.name,muscle:ex.muscle,
@@ -2012,7 +2030,7 @@ function viewHome(){
       <div style="font-size:13px;color:#9090b0;margin-bottom:14px">${esc(t('focus_'+nextDay.focus))}</div>
       <div style="display:flex;flex-wrap:wrap;margin-bottom:16px">${pillsHTML}</div>
       <button class="btn-primary" onclick="startWorkout('${A.activeDayId}')">${t('home_start')}</button>
-      <button class="btn-ghost" style="margin-top:8px" onclick="openFreeBuilder()">✏️ Rakenna oma harjoitus</button>
+      <button class="btn-ghost" style="margin-top:8px" onclick="openFreeBuilder()">${t('free_open_builder')}</button>
     </div>
     ${swapAlert}
     ${(()=>{
@@ -2022,11 +2040,11 @@ function viewHome(){
         <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;">
           <div style="flex:1;cursor:pointer" onclick="startFreeWorkout(${JSON.stringify(cw.exerciseIds)})">
             <div style="font-weight:600;font-size:14px">▶ ${esc(cw.name)}</div>
-            <div style="font-size:11px;color:#9090b0">${cw.exerciseIds.length} liikettä</div>
+            <div style="font-size:11px;color:#9090b0">${cw.exerciseIds.length} ${t('free_exercises')}</div>
           </div>
           <span style="color:#888;font-size:18px;padding:4px 8px;cursor:pointer" onclick="event.stopPropagation();confirmDeleteCustomWorkout('${cw.id}')">🗑</span>
         </div>`).join('');
-      return`<div class="sec-title" style="margin-top:20px">Omat harjoitukset</div>${listHTML}`;
+      return`<div class="sec-title" style="margin-top:20px">${t('free_my_workouts')}</div>${listHTML}`;
     })()}
     <div class="sec-title" style="margin-top:20px">${t('home_all_days')} ${t('block_label')} ${block.id}</div>
     ${dayListHTML}
@@ -2563,7 +2581,7 @@ function confirmQuit(){
     id:Date.now(),
     date:new Date().toISOString(),
     blockId:isFree?"free":block.id,blockLabel:isFree?"Free":block.label,
-    dayId:isFree?"free":A.activeDayId,dayLabel:isFree?"Vapaa harjoitus":day?day.label:'',
+    dayId:isFree?"free":A.activeDayId,dayLabel:isFree?t('free_workout_label'):day?day.label:'',
     duration:Math.round((Date.now()-A.sessionStart)/60000),
     partial:true,
     exercises:A.sessionExercises.map(ex=>({
@@ -2585,7 +2603,7 @@ function confirmQuit(){
 
 function viewFreeBuilder(){
   const muscles=["All",...Object.keys(LIBRARY)];
-  const pillsHTML=muscles.map(m=>`<button class="free-pill${A.freeFilter===m?' active':''}" onclick="setFreeFilter('${m}')">${m==='All'?'Kaikki':m}</button>`).join('');
+  const pillsHTML=muscles.map(m=>`<button class="free-pill${A.freeFilter===m?' active':''}" onclick="setFreeFilter('${m}')">${m==='All'?t('free_all'):m}</button>`).join('');
   const filtered=A.freeFilter==="All"
     ?Object.entries(LIBRARY).flatMap(([muscle,exs])=>exs.map(e=>({...e,muscle})))
     :(LIBRARY[A.freeFilter]||[]).map(e=>({...e,muscle:A.freeFilter}));
@@ -2601,50 +2619,51 @@ function viewFreeBuilder(){
   }).join('');
   const selectedHTML=A.freeExerciseIds.length>0?`
     <div style="background:#1a1a2e;border-radius:10px;padding:12px;margin-bottom:14px;border:1px solid #333;">
-      <div style="color:#d4a846;font-size:12px;font-weight:700;margin-bottom:8px">VALITUT (${A.freeExerciseIds.length})</div>
+      <div style="color:#d4a846;font-size:12px;font-weight:700;margin-bottom:8px">${t('free_selected')} (${A.freeExerciseIds.length})</div>
       ${A.freeExerciseIds.map((id,i)=>{const b=_libFind(id);return`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span style="font-size:13px">${i+1}. ${esc(b?b.name:id)}</span><span style="color:#888;font-size:18px;cursor:pointer;" onclick="event.stopPropagation();toggleFreeExercise('${id}')">✕</span></div>`;}).join('')}
     </div>`:'';
   return`
   <div class="hdr">
     <div style="display:flex;align-items:center;gap:10px">
       <button style="background:none;border:none;color:#9090b0;font-size:22px;cursor:pointer;padding:0" onclick="navigate('home')">←</button>
-      <div class="logo" style="font-size:16px">Rakenna harjoitus</div>
+      <div class="logo" style="font-size:16px">${t('free_build_title')}</div>
     </div>
   </div>
   <div class="page">
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">${pillsHTML}</div>
     ${listHTML}
     ${selectedHTML}
-    <button class="btn-primary" ${A.freeExerciseIds.length===0?'disabled':''} onclick="startFreeWorkout(A.freeExerciseIds)">▶ Aloita harjoitus (${A.freeExerciseIds.length})</button>
+    <button class="btn-primary" ${A.freeExerciseIds.length===0?'disabled':''} onclick="startFreeWorkout(A.freeExerciseIds)">${t('free_start_btn')} (${A.freeExerciseIds.length})</button>
   </div>`;
 }
 
 function viewFreeComplete(){
+  if(!A.completedSession)return viewHome();
   return`
   <div class="hdr"><div class="logo">RAUTALOKI</div></div>
   <div class="page">
     <div style="text-align:center;margin-bottom:24px">
       <div style="font-size:64px">🏋</div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:900;color:#d4a846;margin-top:8px">Harjoitus valmis!</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:900;color:#d4a846;margin-top:8px">${t('free_complete_title')}</div>
     </div>
     <div class="scard" style="margin-bottom:12px">
-      <div style="font-size:14px;font-weight:700;margin-bottom:12px">Haluatko tallentaa tämän harjoituksen mallipohjana?</div>
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px">${t('free_save_as_template')}</div>
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:10px">
         <input type="checkbox" id="free-save-cb" style="width:18px;height:18px" onchange="document.getElementById('free-name-row').style.display=this.checked?'block':'none'">
-        <span style="font-size:14px">Kyllä, tallenna</span>
+        <span style="font-size:14px">${t('free_save_yes')}</span>
       </label>
       <div id="free-name-row" style="display:none">
-        <input id="free-name-inp" type="text" style="width:100%;box-sizing:border-box;background:#0a0a18;border:1px solid #333;border-radius:8px;color:#f2f0ea;padding:10px;font-size:14px;font-family:inherit" placeholder="Harjoituksen nimi" value="">
+        <input id="free-name-inp" type="text" style="width:100%;box-sizing:border-box;background:#0a0a18;border:1px solid #333;border-radius:8px;color:#f2f0ea;padding:10px;font-size:14px;font-family:inherit" placeholder="${t('free_name_placeholder')}" value="">
       </div>
     </div>
     <div class="scard" style="margin-bottom:20px">
-      <div style="font-size:14px;font-weight:700;margin-bottom:12px">Lasketaanko tämä ohjelman etenemiseen?</div>
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px">${t('free_count_progress')}</div>
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
         <input type="checkbox" id="free-count-cb" style="width:18px;height:18px">
-        <span style="font-size:14px">Kyllä, laske etenemiseen</span>
+        <span style="font-size:14px">${t('free_count_yes')}</span>
       </label>
     </div>
-    <button class="btn-primary" onclick="confirmFreeWorkout()">Jatka →</button>
+    <button class="btn-primary" onclick="confirmFreeWorkout()">${t('free_continue')}</button>
   </div>`;
 }
 function confirmFreeWorkout(){
@@ -2661,7 +2680,7 @@ function confirmFreeWorkout(){
     ls.set(SK.history,A.history);
   }
   if(saveCb&&saveCb.checked&&s){
-    const name=(nameInp&&nameInp.value.trim())||'Vapaa harjoitus';
+    const name=(nameInp&&nameInp.value.trim())||t('free_workout_label');
     saveCustomWorkout(name,s.exercises.map(e=>e.libId).filter(Boolean));
   }
   if(wantsCount){
