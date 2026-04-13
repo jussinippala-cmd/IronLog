@@ -110,8 +110,10 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
   color:#9090b0;font-size:15px;width:100%;text-align:center;font-weight:400}
 .rep-btn.has-val{color:#f2f0ea;font-weight:700}
 .rep-btn.editing{border-color:#ee8877}
+.rep-btn.below-min{color:#e05555}
 .rep-display{background:#d4a84618;border:1px solid #d4a84655;border-radius:10px;padding:11px 8px;
   color:#d4a846;font-weight:700;font-size:15px;text-align:center}
+.rep-display.below-min{color:#e05555;background:#e0555518}
 /* KG input */
 .kg-inp{background:#080810;border:1px solid #1c1c2e;border-radius:10px;padding:11px 12px;
   color:#f2f0ea;font-size:15px;text-align:center;width:100%}
@@ -1645,7 +1647,7 @@ function cycleReps(exId,idx,repRange){
   if(!sets)return;
   const current=parseInt(sets[idx].reps);
   const[lo,hi]=repRange;
-  const next=(!sets[idx].reps||isNaN(current)||current<=lo)?hi:current-1;
+  const next=(!sets[idx].reps||isNaN(current)||current<=lo-2)?hi:current-1;
   sets[idx]={...sets[idx],reps:String(next)};
   // Only re-render the specific rep button to avoid full page flicker
   const btn=document.getElementById(`rep-btn-${exId}-${idx}`);
@@ -1653,6 +1655,7 @@ function cycleReps(exId,idx,repRange){
     btn.textContent=String(next);
     btn.classList.add('has-val');
     btn.classList.remove('editing');
+    btn.classList.toggle('below-min',next<lo);
     // Update check button opacity
     const chk=document.getElementById(`chk-btn-${exId}-${idx}`);
     if(chk)chk.disabled=false;
@@ -1788,10 +1791,11 @@ function updateFinishBtn(){
 // ═══════════════════════════════════════════════════════════════════
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-function buildSetRowHTML(ex,si,set){
+function buildSetRowHTML(ex,si,set,prevReps=0){
   const repLabel=set.reps?set.reps:(ex.repRange[0]===ex.repRange[1]?`${ex.repRange[0]}`:`${ex.repRange[0]}–${ex.repRange[1]}`);
   const isPlaceholder=!set.reps;
   const isEditing=set.editing===true;
+  const isBelowMin=set.reps&&parseInt(set.reps)<ex.repRange[0];
 
   // Set number cell
   const numCell=set.done&&!isEditing
@@ -1801,10 +1805,13 @@ function buildSetRowHTML(ex,si,set){
   // Reps cell
   let repsCell;
   if(!set.done||isEditing){
-    const cls='rep-btn'+(isPlaceholder?'':' has-val')+(isEditing?' editing':'');
-    repsCell=`<button id="rep-btn-${ex.id}-${si}" class="${cls}" onclick="cycleReps('${ex.id}',${si},[${ex.repRange}])">${repLabel}</button>`;
+    const cls='rep-btn'+(isPlaceholder?'':' has-val')+(isEditing?' editing':'')+(isBelowMin?' below-min':'');
+    const prevHint=(!set.done&&prevReps>0&&prevReps<ex.repRange[0])
+      ?`<span style="display:block;font-size:9px;color:#e05555;margin-top:2px;line-height:1">↓ ed. ${prevReps}</span>`
+      :'';
+    repsCell=`<div style="display:flex;flex-direction:column;align-items:center"><button id="rep-btn-${ex.id}-${si}" class="${cls}" onclick="cycleReps('${ex.id}',${si},[${ex.repRange}])">${repLabel}</button>${prevHint}</div>`;
   }else{
-    repsCell=`<div class="rep-display">${esc(set.reps)}</div>`;
+    repsCell=`<div class="rep-display${isBelowMin?' below-min':''}">${esc(set.reps)}</div>`;
   }
 
   // KG cell
@@ -1873,9 +1880,10 @@ function buildExerciseCard(ex,ei){
     ?`<div class="last-info">${t('workout_last')} <span style="color:#f2f0ea;font-weight:600">${lastW}kg × ~${lastR} ${t('workout_reps')}</span>${bump?` <span style="color:#d4a846;font-weight:700">${t('workout_try')} ${Math.round(lastW*1.025*2)/2}kg</span>`:''}</div>`
     :'';
 
+  const lastSetReps=lastS?lastS.sets.map(s=>parseInt(s.reps)||0):[];
   let setsHTML='';
   sets.forEach((set,si)=>{
-    setsHTML+=`<div id="set-row-${ex.id}-${si}" class="set-grid">${buildSetRowHTML(ex,si,set)}</div>`;
+    setsHTML+=`<div id="set-row-${ex.id}-${si}" class="set-grid">${buildSetRowHTML(ex,si,set,lastSetReps[si]||0)}</div>`;
   });
 
   return`
