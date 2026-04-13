@@ -521,6 +521,7 @@ free_complete_title:"Workout done!",free_save_as_template:"Save this workout as 
 free_save_yes:"Yes, save",free_name_placeholder:"Workout name",
 free_count_progress:"Count this toward program progress?",free_count_yes:"Yes, count toward progress",
 free_continue:"Continue →",
+reps_prev_low:"↓ prev.",
 },
 fi:{
 // Exercise names
@@ -751,6 +752,7 @@ free_complete_title:"Harjoitus valmis!",free_save_as_template:"Haluatko tallenta
 free_save_yes:"Kyllä, tallenna",free_name_placeholder:"Harjoituksen nimi",
 free_count_progress:"Lasketaanko tämä ohjelman etenemiseen?",free_count_yes:"Kyllä, laske etenemiseen",
 free_continue:"Jatka →",
+reps_prev_low:"↓ ed.",
 }
 };
 
@@ -1807,7 +1809,7 @@ function buildSetRowHTML(ex,si,set,prevReps=0){
   if(!set.done||isEditing){
     const cls='rep-btn'+(isPlaceholder?'':' has-val')+(isEditing?' editing':'')+(isBelowMin?' below-min':'');
     const prevHint=(!set.done&&prevReps>0&&prevReps<ex.repRange[0])
-      ?`<span style="display:block;font-size:9px;color:#e05555;margin-top:2px;line-height:1">↓ ed. ${prevReps}</span>`
+      ?`<span style="display:block;font-size:9px;color:#e05555;margin-top:2px;line-height:1">${t('reps_prev_low')} ${prevReps}</span>`
       :'';
     repsCell=`<div style="display:flex;flex-direction:column;align-items:center"><button id="rep-btn-${ex.id}-${si}" class="${cls}" onclick="cycleReps('${ex.id}',${si},[${ex.repRange}])">${repLabel}</button>${prevHint}</div>`;
   }else{
