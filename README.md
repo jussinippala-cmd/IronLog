@@ -1,47 +1,90 @@
-# Rautaloki
+# IronLog (Rautaloki)
 
 > Your gym. Your rules.
 
-A minimalist Progressive Web App (PWA) for tracking strength training workouts. Built as a single HTML file — no backend, no build tools, no dependencies to install.
+**A minimalist Progressive Web App for tracking strength training — built entirely as a single HTML file with no frameworks, no backend, and no dependencies.**
+
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-gold?style=for-the-badge)](https://jussinippala-cmd.github.io/IronLog/)
+
+---
+
+## Live Demo
+
+**[https://jussinippala-cmd.github.io/IronLog/](https://jussinippala-cmd.github.io/IronLog/)**
+
+Open on mobile for the full experience — installable as a PWA directly from the browser.
+
+---
 
 ## Features
 
-- **Workout tracking** — Log sets, reps, and weights in real time
-- **Program management** — Create and follow training blocks with multiple days
+- **Workout tracking** — Log sets, reps, and weights in real time during a session
+- **Program management** — Create structured training blocks with multiple days and exercises
+- **Free workout builder** — Build ad-hoc workouts outside of programs
+- **Auto-progression** — Configurable weight/rep progression with fail streak tracking
 - **Training history** — Review past sessions with progress charts, delete individual sessions
 - **Rest timer** — Configurable rest timer between sets
-- **Export / Import** — Download workout history as CSV or import from file
-- **Offline-first** — Works without internet via Service Worker
+- **Export / Import** — Download full workout history as CSV or import from file
+- **Offline-first** — Fully functional without internet via Service Worker
 - **Bilingual** — English and Finnish UI
 - **PWA** — Installable on iOS/Android home screen, runs fullscreen
 
-## Stack
+---
 
-- Vanilla HTML/CSS/JavaScript — zero frameworks
-- `localStorage` for all data persistence
-- Service Worker for offline support
+## Tech Stack
 
-## Usage
+| Layer | Choice | Reason |
+|---|---|---|
+| UI | Vanilla HTML/CSS/JS | Zero dependencies, maximum portability |
+| Data | `localStorage` | No backend needed, offline-first by design |
+| Offline | Service Worker | Full offline support and home screen install |
+| i18n | Custom `t()` system | EN/FI without a library |
+| Distribution | Single `index.html` | Deployable anywhere, sharable as a file |
 
-Open `index.html` in a browser. On iOS Safari, tap **Share → Add to Home Screen** for the full app experience.
+No build step. No npm install. No framework lock-in.
 
-Or host it on GitHub Pages / Netlify and visit the URL on your phone.
+---
 
-## Project structure
+## Screenshots
+
+<!-- Add screenshots here -->
+> Coming soon — or open the [live demo](https://jussinippala-cmd.github.io/IronLog/) to see it in action.
+
+---
+
+## Getting Started
+
+Clone and open directly in a browser:
+
+```bash
+git clone https://github.com/jussinippala-cmd/IronLog.git
+cd IronLog
+open index.html
+```
+
+For the full PWA experience on iOS: Safari → **Share → Add to Home Screen**.
+
+---
+
+## Project Structure
 
 ```
-index.html      # Entire app (HTML + CSS + JS)
+index.html      # Entire app — HTML, CSS, and JS in one file (~2800 lines)
 manifest.json   # PWA manifest
-sw.js           # Service Worker
+sw.js           # Service Worker (offline caching)
 icons/          # App icons (192px, 512px, Apple touch)
 ```
 
-## Data
+---
 
-All data is stored in the browser's `localStorage`. Nothing is sent anywhere. Clearing browser data will erase your workout history. Use **Settings → Export** to back up your data as CSV.
+## Data & Privacy
+
+All data lives in the browser's `localStorage`. Nothing is sent to any server. Clearing browser data erases workout history — use **Settings → Export** to back up as CSV.
+
+---
 
 ## License
 
 Personal use.
 
-Get that pump going!
+Get that pump going.
