@@ -1961,7 +1961,7 @@ function buildExerciseCard(ex,ei){
   const doneIcon=exDone?'<span style="color:#d4a846">✓ </span>':'';
   const cueText=t('cue_'+(ex.libId||''))||esc(ex.cues);
   const ytUrl=ex.libId&&YOUTUBE[ex.libId];
-  const ytBtn=ytUrl?`<a class="yt-btn" href="${ytUrl}" target="_blank" rel="noopener noreferrer" aria-label="${t('yt_aria')}">▶</a>`:'';
+  const ytBtn=ytUrl?`<a class="yt-btn" href="${ytUrl}" target="_blank" rel="noopener noreferrer" aria-label="${esc(t('yt_aria'))}">▶</a>`:'';
   const lastInfo=lastW>0
     ?`<div class="last-info">${t('workout_last')} <span style="color:#f2f0ea;font-weight:600">${lastW}kg × ~${lastR} ${t('workout_reps')}</span>${bump?` <span style="color:#d4a846;font-weight:700">${t('workout_try')} ${Math.round(lastW*1.025*2)/2}kg</span>`:''}</div>`
     :'';
