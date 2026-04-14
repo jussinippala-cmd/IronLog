@@ -357,7 +357,7 @@ const YOUTUBE={
 // ═══════════════════════════════════════════════════════════════════
 // STORAGE (must be first — everything else depends on ls)
 // ═══════════════════════════════════════════════════════════════════
-const SK={weights:"il_weights",history:"il_history",nextDay:"il_nextDay",blockStart:"il_blockStart",blockIdx:"il_blockIdx",customWorkouts:"il_customworkouts",wupGoal:"il_wup_goal",wupWeek:"il_wup_week",wupAnchor:"il_wup_anchor"};
+const SK={weights:"il_weights",history:"il_history",nextDay:"il_nextDay",blockStart:"il_blockStart",blockIdx:"il_blockIdx",customWorkouts:"il_customworkouts",wupGoal:"il_wup_goal",wupWeek:"il_wup_week",wupAnchor:"il_wup_anchor",failStreaks:"il_failstreaks"};
 const ls={
   get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch{return null;}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
@@ -371,6 +371,15 @@ function saveProfile(p){ls.set("il_profile",p);}
 function getSettings(){return ls.get("il_settings")||{restSeconds:90};}
 function saveSetting(key,val){const s=getSettings();s[key]=val;ls.set("il_settings",s);}
 function getRestDuration(){const s=getSettings();return s.restSeconds!==undefined?s.restSeconds:90;}
+function roundToHalf(w){return Math.round(w/0.5)*0.5;}
+function getProgressionPct(){const s=getSettings();return s.progressionPct!==undefined?s.progressionPct:2.5;}
+function getFailStreak(libId){const fs=ls.get(SK.failStreaks)||{};return fs[libId]||0;}
+function updateFailStreak(libId,succeeded){
+  if(!libId)return;
+  const fs=ls.get(SK.failStreaks)||{};
+  if(succeeded){fs[libId]=0;}else{fs[libId]=(fs[libId]||0)+1;}
+  ls.set(SK.failStreaks,fs);
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // I18N — Language / Kieli
