@@ -357,7 +357,7 @@ const YOUTUBE={
 // ═══════════════════════════════════════════════════════════════════
 // STORAGE (must be first — everything else depends on ls)
 // ═══════════════════════════════════════════════════════════════════
-const SK={weights:"il_weights",history:"il_history",nextDay:"il_nextDay",blockStart:"il_blockStart",blockIdx:"il_blockIdx",customWorkouts:"il_customworkouts"};
+const SK={weights:"il_weights",history:"il_history",nextDay:"il_nextDay",blockStart:"il_blockStart",blockIdx:"il_blockIdx",customWorkouts:"il_customworkouts",wupGoal:"il_wup_goal",wupWeek:"il_wup_week",wupAnchor:"il_wup_anchor"};
 const ls={
   get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch{return null;}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
@@ -605,6 +605,14 @@ free_count_progress:"Count this toward program progress?",free_count_yes:"Yes, c
 free_continue:"Continue →",
 reps_prev_low:"↓ prev.",
 yt_aria:"Watch tutorial",
+// WUP / Goal
+wup_week:"Week",wup_deload_week:"Deload Week",wup_deload_label:"Deload",
+wup_deload_desc:"Light session — 60% weight, easy reps",
+wup_goal_label:"Goal",wup_goal_title:"Training Goal",
+wup_goal_desc:"Sets your weekly rep pattern. Changing resets the cycle to Week 1.",
+wup_current_week:"Cycle week:",
+goal_hypertrophy:"Hypertrophy",goal_strength:"Strength",goal_fat_loss:"Fat Loss",
+ob_goal:"Training goal?",ob_goal_hypertrophy:"Build muscle",ob_goal_strength:"Get strong",ob_goal_fat_loss:"Lose fat",
 },
 fi:{
 // Exercise names
@@ -837,6 +845,14 @@ free_count_progress:"Lasketaanko tämä ohjelman etenemiseen?",free_count_yes:"K
 free_continue:"Jatka →",
 reps_prev_low:"↓ ed.",
 yt_aria:"Katso ohjevideo",
+// WUP / Tavoite
+wup_week:"Viikko",wup_deload_week:"Deload-viikko",wup_deload_label:"Deload",
+wup_deload_desc:"Kevyt sessio — 60% painot, helpot toistot",
+wup_goal_label:"Tavoite",wup_goal_title:"Treenitavoite",
+wup_goal_desc:"Määrittää viikoittaisen toistomallin. Muuttaminen nollaa syklin viikkoon 1.",
+wup_current_week:"Syklin viikko:",
+goal_hypertrophy:"Lihasmassa",goal_strength:"Voima",goal_fat_loss:"Rasvanpoltto",
+ob_goal:"Treenitavoite?",ob_goal_hypertrophy:"Kasvata lihasta",ob_goal_strength:"Kehitä voimaa",ob_goal_fat_loss:"Polta rasvaa",
 }
 };
 
@@ -1568,6 +1584,51 @@ function isThisISOWeek(dateStr){
   mon.setHours(0,0,0,0);
   return d>=mon;
 }
+function getISOWeekKey(date=new Date()){
+  const d=new Date(date);
+  const day=d.getDay();
+  d.setDate(d.getDate()+(day===0?-6:1-day));
+  d.setHours(0,0,0,0);
+  const jan4=new Date(d.getFullYear(),0,4);
+  const weekNum=Math.ceil(((d-jan4)/86400000+jan4.getDay()+1)/7);
+  return`${d.getFullYear()}-W${String(weekNum).padStart(2,'0')}`;
+}
+function getWupState(){
+  return{
+    goal:localStorage.getItem(SK.wupGoal)||"hypertrophy",
+    week:parseInt(localStorage.getItem(SK.wupWeek))||1,
+    anchor:localStorage.getItem(SK.wupAnchor)||getISOWeekKey()
+  };
+}
+function isDeloadWeek(){return getWupState().week===4;}
+function setWupGoal(goal){
+  localStorage.setItem(SK.wupGoal,goal);
+  localStorage.setItem(SK.wupWeek,"1");
+  localStorage.setItem(SK.wupAnchor,getISOWeekKey());
+}
+function getWeekReps(repRange,weekInCycle,goal){
+  const[lo,hi]=repRange;
+  const tables={
+    hypertrophy:[hi,hi+2,lo,Math.max(hi+5,15)],
+    strength:[lo+2,lo+1,lo,hi],
+    fat_loss:[hi,hi+3,hi+1,Math.max(hi+5,15)]
+  };
+  const tbl=tables[goal]||tables.hypertrophy;
+  return Math.max(1,tbl[weekInCycle-1]||hi);
+}
+function applyWupToExercises(exercises){
+  const{goal,week}=getWupState();
+  return exercises.map(ex=>({...ex,wupTargetReps:getWeekReps(ex.repRange,week,goal)}));
+}
+function maybeAdvanceWupWeek(){
+  const{week,anchor}=getWupState();
+  const current=getISOWeekKey();
+  if(current!==anchor){
+    const next=(week%4)+1;
+    localStorage.setItem(SK.wupWeek,String(next));
+    localStorage.setItem(SK.wupAnchor,current);
+  }
+}
 function fmtTime(s){return`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;}
 function fmtDate(iso){return new Date(iso).toLocaleDateString(getLang()==='fi'?'fi-FI':'en-GB',{day:'numeric',month:'short'});}
 function today(){return new Date().toLocaleDateString(getLang()==='fi'?'fi-FI':'en-GB',{weekday:'short',day:'numeric',month:'short'});}
@@ -1663,10 +1724,11 @@ document.addEventListener('visibilitychange',()=>{
 // ═══════════════════════════════════════════════════════════════════
 function buildInitialSets(exercises){
   const init={};
+  const deload=isDeloadWeek();
   exercises.forEach(ex=>{
     const lw=getLastWeight(ex.libId)??getLastWeight(ex.id);
-    const bump=shouldIncrease(ex.id,ex.repRange[1],ex.libId);
-    const w=lw?(bump?String(Math.round(lw*1.025*2)/2):String(lw)):"";
+    const bump=!deload&&shouldIncrease(ex.id,ex.repRange[1],ex.libId);
+    const w=lw?String(deload?Math.round(lw*0.6*2)/2:(bump?Math.round(lw*1.025*2)/2:lw)):"";
     init[ex.id]=Array.from({length:ex.sets},()=>({reps:"",weight:w,done:false,editing:false}));
   });
   return init;
@@ -1676,7 +1738,7 @@ function startWorkout(dayId,block){
   block=block||BLOCKS[A.blockIdx];
   const day=block.days.find(d=>d.id===dayId);
   A.activeDayId=dayId;
-  A.sessionExercises=day.exercises.map(e=>({...e}));
+  A.sessionExercises=applyWupToExercises(day.exercises.map(e=>({...e})));
   A.sessionSets=buildInitialSets(A.sessionExercises);
   A.sessionStart=Date.now();
   A.elapsed=0;
@@ -1705,7 +1767,7 @@ function setFreeFilter(muscle){
 }
 function startFreeWorkout(exerciseIds){
   if(!exerciseIds||!exerciseIds.length)return;
-  A.sessionExercises=exerciseIds.map(libId=>Ex(0,libId)).filter(Boolean);
+  A.sessionExercises=applyWupToExercises(exerciseIds.map(libId=>Ex(0,libId)).filter(Boolean));
   A.sessionSets=buildInitialSets(A.sessionExercises);
   A.sessionStart=Date.now();
   A.elapsed=0;
@@ -1718,21 +1780,24 @@ function startFreeWorkout(exerciseIds){
 }
 function swapExercise(oldId,newEx){
   closeSwap();
-  A.sessionExercises=A.sessionExercises.map(e=>e.id===oldId?{...newEx}:e);
+  const wupNew=applyWupToExercises([newEx])[0];
+  A.sessionExercises=A.sessionExercises.map(e=>e.id===oldId?{...wupNew}:e);
   delete A.sessionSets[oldId];
-  const lw=getLastWeight(newEx.libId)??getLastWeight(newEx.id);
-  const bump=shouldIncrease(newEx.id,newEx.repRange[1],newEx.libId);
-  const w=lw?(bump?String(Math.round(lw*1.025*2)/2):String(lw)):"";
-  A.sessionSets[newEx.id]=Array.from({length:newEx.sets},()=>({reps:"",weight:w,done:false,editing:false}));
+  const deload=isDeloadWeek();
+  const lw=getLastWeight(wupNew.libId)??getLastWeight(wupNew.id);
+  const bump=!deload&&shouldIncrease(wupNew.id,wupNew.repRange[1],wupNew.libId);
+  const w=lw?String(deload?Math.round(lw*0.6*2)/2:(bump?Math.round(lw*1.025*2)/2:lw)):"";
+  A.sessionSets[wupNew.id]=Array.from({length:wupNew.sets},()=>({reps:"",weight:w,done:false,editing:false}));
   A.swapTarget=null;
   render();
 }
 
-function cycleReps(exId,idx,repRange){
+function cycleReps(exId,idx,repRange,wupTarget=null){
   const sets=A.sessionSets[exId];
   if(!sets)return;
   const current=parseInt(sets[idx].reps);
-  const[lo,hi]=repRange;
+  const[lo]=repRange;
+  const hi=wupTarget!==null?wupTarget:repRange[1];
   const next=(!sets[idx].reps||isNaN(current)||current<=lo-2)?hi:current-1;
   sets[idx]={...sets[idx],reps:String(next)};
   // Only re-render the specific rep button to avoid full page flicker
@@ -1824,6 +1889,7 @@ function finishWorkout(){
   A.blockIdx=advanceBlockIfNeeded();
   A.previewBlockIdx=A.blockIdx;
   A.activeDayId=getNextDayId();
+  maybeAdvanceWupWeek();
   navigate("complete");
 }
 
@@ -1878,10 +1944,12 @@ function updateFinishBtn(){
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 function buildSetRowHTML(ex,si,set,prevReps=0){
-  const repLabel=set.reps?set.reps:(ex.repRange[0]===ex.repRange[1]?`${ex.repRange[0]}`:`${ex.repRange[0]}–${ex.repRange[1]}`);
+  const targetReps=ex.wupTargetReps||null;
+  const repLabel=set.reps?set.reps:(targetReps?String(targetReps):(ex.repRange[0]===ex.repRange[1]?`${ex.repRange[0]}`:`${ex.repRange[0]}–${ex.repRange[1]}`));
   const isPlaceholder=!set.reps;
   const isEditing=set.editing===true;
-  const isBelowMin=set.reps&&parseInt(set.reps)<ex.repRange[0];
+  const floorMin=Math.min(ex.repRange[0],targetReps||ex.repRange[0]);
+  const isBelowMin=set.reps&&parseInt(set.reps)<floorMin;
 
   // Set number cell
   const numCell=set.done&&!isEditing
@@ -1895,7 +1963,7 @@ function buildSetRowHTML(ex,si,set,prevReps=0){
     const prevHint=(!set.done&&prevReps>0&&prevReps<ex.repRange[0])
       ?`<span style="display:block;font-size:9px;color:#e05555;margin-top:2px;line-height:1">${t('reps_prev_low')} ${prevReps}</span>`
       :'';
-    repsCell=`<div style="display:flex;flex-direction:column;align-items:center"><button id="rep-btn-${ex.id}-${si}" class="${cls}" onclick="cycleReps('${ex.id}',${si},[${ex.repRange}])">${repLabel}</button>${prevHint}</div>`;
+    repsCell=`<div style="display:flex;flex-direction:column;align-items:center"><button id="rep-btn-${ex.id}-${si}" class="${cls}" onclick="cycleReps('${ex.id}',${si},[${ex.repRange}],${targetReps!==null?targetReps:'null'})">${repLabel}</button>${prevHint}</div>`;
   }else{
     repsCell=`<div class="rep-display${isBelowMin?' below-min':''}">${esc(set.reps)}</div>`;
   }
@@ -1958,14 +2026,19 @@ function buildExerciseCard(ex,ei){
   const lastW=wts.length?Math.max(...wts):0;
   const lastR=lastS&&lastS.sets.length?Math.round(lastS.sets.reduce((a,s)=>a+(parseInt(s.reps)||0),0)/lastS.sets.length):0;
 
-  const bumpBadge=bump&&!exDone?`<span class="badge" style="background:#d4a84622;color:#d4a846">${t('workout_load')}</span>`:'';
+  const deload=isDeloadWeek();
+  const bumpBadge=bump&&!exDone&&!deload?`<span class="badge" style="background:#d4a84622;color:#d4a846">${t('workout_load')}</span>`:
+    deload&&!exDone?`<span class="badge" style="background:#e8c55a22;color:#e8c55a">📉 ${t('wup_deload_label')}</span>`:'';
   const swapBtn=exDone?'':`<button class="btn-swap" onclick="openSwap('${ex.id}','${ex.muscle}')">${t('workout_swap')}</button>`;
   const doneIcon=exDone?'<span style="color:#d4a846">✓ </span>':'';
   const cueText=t('cue_'+(ex.libId||''))||esc(ex.cues);
   const ytUrl=ex.libId&&YOUTUBE[ex.libId];
   const ytBtn=ytUrl?`<a class="yt-btn" href="${ytUrl}" target="_blank" rel="noopener noreferrer" aria-label="${esc(t('yt_aria'))}">▶</a>`:'';
+  const repDisplay=ex.wupTargetReps?(deload?`${ex.wupTargetReps} 📉`:`${ex.wupTargetReps}`):`${ex.repRange[0]}–${ex.repRange[1]}`;
+  const weightSuggest=deload?` <span style="color:#e8c55a;font-weight:700">📉 ${Math.round(lastW*0.6*2)/2}kg</span>`:
+    (bump?` <span style="color:#d4a846;font-weight:700">${t('workout_try')} ${Math.round(lastW*1.025*2)/2}kg</span>`:'');
   const lastInfo=lastW>0
-    ?`<div class="last-info">${t('workout_last')} <span style="color:#f2f0ea;font-weight:600">${lastW}kg × ~${lastR} ${t('workout_reps')}</span>${bump?` <span style="color:#d4a846;font-weight:700">${t('workout_try')} ${Math.round(lastW*1.025*2)/2}kg</span>`:''}</div>`
+    ?`<div class="last-info">${t('workout_last')} <span style="color:#f2f0ea;font-weight:600">${lastW}kg × ~${lastR} ${t('workout_reps')}</span>${weightSuggest}</div>`
     :'';
 
   const lastSetReps=lastS?lastS.sets.map(s=>parseInt(s.reps)||0):[];
@@ -1979,7 +2052,7 @@ function buildExerciseCard(ex,ei){
     <div class="ex-header">
       <div class="ex-title-area">
         <div class="ex-title">${doneIcon}${esc(t(ex.libId||ex.name))}${ytBtn}<span class="mtag">${esc(t('muscle_'+ex.muscle))}</span></div>
-        <div class="ex-meta">${ex.sets} ${t('workout_sets')} · ${ex.repRange[0]}–${ex.repRange[1]} ${t('workout_reps')}</div>
+        <div class="ex-meta">${ex.sets} ${t('workout_sets')} · ${repDisplay} ${t('workout_reps')}</div>
       </div>
       <div class="ex-actions">${bumpBadge}${swapBtn}</div>
     </div>
@@ -2118,6 +2191,7 @@ function viewHome(){
       <div class="stat-box"><div class="stat-val">${weekS}<span>/${freq}</span></div><div class="stat-lbl">${t('stat_this_week')}</div></div>
       <div class="stat-box"><div class="stat-val">${stu}</div><div class="stat-lbl">${t('stat_to_swap')}</div></div>
     </div>
+    ${(()=>{const{goal,week}=getWupState();const dl=week===4;return`<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap"><span style="background:#1c1c2e;border-radius:99px;padding:3px 10px;font-size:11px;color:#d4a846;font-weight:700">${t('goal_'+goal)} · ${t('wup_week')} ${week}/4</span>${dl?`<span style="font-size:11px;color:#e8c55a;font-weight:700">📉 ${t('wup_deload_label')}</span>`:''}</div>`;})()}
     <div class="acard">
       <div style="font-size:11px;color:#d4a846;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">
         ${t('home_up_next')} · ${t('block_label')} ${block.id} · ${t('home_day')} ${nextDay.id}
@@ -2154,6 +2228,7 @@ function viewWorkout(){
   const pct=total?Math.round(done/total*100):0;
   const isDone=allDone();
   const someStarted=done>0&&!isDone;
+  const deloadBanner=isDeloadWeek()?`<div style="background:#1a1810;border:1px solid #e8c55a44;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#e8c55a">📉 <strong>${t('wup_deload_week')}</strong> — ${t('wup_deload_desc')}</div>`:'';
   return`
   <div id="workout-hdr" class="hdr" style="padding-top:48px">
     <div>
@@ -2164,6 +2239,7 @@ function viewWorkout(){
   </div>
   <div class="page">
     <div class="progress-track"><div id="progress-fill" class="progress-fill" style="width:${pct}%"></div></div>
+    ${deloadBanner}
     ${exercisesHTML}
     <div style="height:12px"></div>
     <button id="finish-btn" class="btn-primary" onclick="finishWorkout()" ${isDone?'':'disabled'}>
@@ -2374,6 +2450,15 @@ function viewOnboarding(){
       </div>
     </div>
 
+    <div class="ob-section">
+      <div class="ob-label">${t('ob_goal')}</div>
+      <div class="ob-options" id="ob-goal">
+        <div class="ob-opt" data-val="hypertrophy" onclick="obSelect('goal','hypertrophy')"><div class="ob-opt-big">💪</div><div class="ob-opt-sm">${t('ob_goal_hypertrophy')}</div></div>
+        <div class="ob-opt" data-val="strength" onclick="obSelect('goal','strength')"><div class="ob-opt-big">🏋</div><div class="ob-opt-sm">${t('ob_goal_strength')}</div></div>
+        <div class="ob-opt" data-val="fat_loss" onclick="obSelect('goal','fat_loss')"><div class="ob-opt-big">🔥</div><div class="ob-opt-sm">${t('ob_goal_fat_loss')}</div></div>
+      </div>
+    </div>
+
     <button class="btn-primary ob-start" id="ob-start-btn" onclick="obFinish()" disabled>
       ${t('ob_start')}
     </button>
@@ -2381,23 +2466,25 @@ function viewOnboarding(){
   </div>`;
 }
 
-const _obState={freq:null,sex:null};
+const _obState={freq:null,sex:null,goal:null};
 function obSelect(key,val){
   _obState[key]=val;
   // Update UI
-  const container=document.getElementById(key==='freq'?'ob-freq':'ob-sex');
+  const containerId=key==='freq'?'ob-freq':key==='sex'?'ob-sex':'ob-goal';
+  const container=document.getElementById(containerId);
   if(container){
     container.querySelectorAll('.ob-opt').forEach(el=>{
       el.classList.toggle('selected',el.getAttribute('data-val')==String(val));
     });
   }
-  // Enable start button if both selected
+  // Enable start button if all three selected
   const btn=document.getElementById('ob-start-btn');
-  if(btn)btn.disabled=!(_obState.freq&&_obState.sex);
+  if(btn)btn.disabled=!(_obState.freq&&_obState.sex&&_obState.goal);
 }
 function obFinish(){
-  if(!_obState.freq||!_obState.sex)return;
+  if(!_obState.freq||!_obState.sex||!_obState.goal)return;
   saveProfile({freq:_obState.freq,sex:_obState.sex});
+  setWupGoal(_obState.goal);
   reloadBlocks();
   ls.set(SK.blockIdx,0);
   A.blockIdx=0;
@@ -2475,6 +2562,15 @@ function viewSettings(){
         <div style="font-size:12px;color:#9090b0;margin-top:2px">${profile&&profile.freq<=3?t('settings_full_body'):t('settings_split')} ${t('settings_program')}</div>
       </div>
       <button class="btn-tiny" style="color:#d4a846;border-color:#d4a846" onclick="resetProfile()">${t('settings_change')}</button>
+    </div>
+
+    <div class="sec-title" style="margin-top:20px">${t('wup_goal_title')}</div>
+    <div class="card">
+      <div style="font-size:13px;color:#9090b0;margin-bottom:10px">${t('wup_goal_desc')}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${['hypertrophy','strength','fat_loss'].map(g=>{const active=getWupState().goal===g;return`<button class="ob-opt${active?' selected':''}" style="min-width:90px;flex:1;padding:10px 6px" onclick="setWupGoal('${g}');render()"><div style="font-size:20px">${g==='hypertrophy'?'💪':g==='strength'?'🏋':'🔥'}</div><div style="font-size:11px;margin-top:2px">${t('goal_'+g)}</div></button>`;}).join('')}
+      </div>
+      <div style="font-size:11px;color:#9090b0;margin-top:10px">${t('wup_current_week')} ${getWupState().week}/4</div>
     </div>
 
     ${howToUse}
@@ -2579,6 +2675,9 @@ function clearAllData(){
   localStorage.removeItem(SK.blockStart);
   localStorage.removeItem(SK.blockIdx);
   localStorage.removeItem(SK.customWorkouts);
+  localStorage.removeItem(SK.wupGoal);
+  localStorage.removeItem(SK.wupWeek);
+  localStorage.removeItem(SK.wupAnchor);
   localStorage.removeItem("il_settings");
   localStorage.removeItem("il_profile");
   A.history=[];
@@ -2784,6 +2883,7 @@ function confirmFreeWorkout(){
     A.blockIdx=advanceBlockIfNeeded();
     A.previewBlockIdx=A.blockIdx;
     A.activeDayId=getNextDayId();
+    maybeAdvanceWupWeek();
   }
   A.isFreeWorkout=false;
   navigate("complete");
