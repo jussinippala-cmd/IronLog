@@ -47,8 +47,7 @@ No build step. No npm install. No framework lock-in.
 
 ## Screenshots
 
-<!-- Add screenshots here -->
-> Coming soon — or open the [live demo](https://jussinippala-cmd.github.io/IronLog/) to see it in action.
+![Onboarding](screenshots/onboarding.png)
 
 ---
 
