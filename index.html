@@ -2588,6 +2588,18 @@ function viewSettings(){
       <button class="btn-tiny" style="color:#d4a846;border-color:#d4a846" onclick="resetProfile()">${t('settings_change')}</button>
     </div>
 
+    <div class="sec-title" style="margin-top:20px">${t('settings_progression_title')}</div>
+    <div class="card">
+      <div style="font-size:13px;color:#9090b0;margin-bottom:10px">${t('settings_progression_desc')}</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <label style="font-size:13px;color:#f2f0ea;flex:1">${t('settings_progression_pct')}</label>
+        <input type="number" min="0.5" max="20" step="0.5"
+          style="width:70px;background:#0a0a18;border:1px solid #333;border-radius:8px;color:#d4a846;padding:8px;font-size:15px;font-weight:700;text-align:center;font-family:inherit"
+          value="${getProgressionPct()}"
+          onchange="setProgressionPct(this.value)">
+      </div>
+    </div>
+
     <div class="sec-title" style="margin-top:20px">${t('wup_goal_title')}</div>
     <div class="card">
       <div style="font-size:13px;color:#9090b0;margin-bottom:10px">${t('wup_goal_desc')}</div>
@@ -2614,6 +2626,10 @@ function viewSettings(){
   ${navHTML("settings")}`;
 }
 
+function setProgressionPct(pct){
+  const v=parseFloat(pct);
+  if(!isNaN(v)&&v>0&&v<=20)saveSetting('progressionPct',v);
+}
 function setRestTimer(sec){
   saveSetting('restSeconds',sec);
   render();
