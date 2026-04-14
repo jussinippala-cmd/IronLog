@@ -1734,11 +1734,11 @@ document.addEventListener('visibilitychange',()=>{
 function buildInitialSets(exercises){
   const init={};
   const deload=isDeloadWeek();
+  const pct=getProgressionPct();
   exercises.forEach(ex=>{
     const lw=getLastWeight(ex.libId)??getLastWeight(ex.id);
     const bump=!deload&&shouldIncrease(ex.id,ex.repRange[1],ex.libId);
     const failDeload=!deload&&getFailStreak(ex.libId||ex.id)>=2;
-    const pct=getProgressionPct();
     const w=lw?String(
       deload?roundToHalf(lw*0.6):
       failDeload?roundToHalf(lw*0.9):
