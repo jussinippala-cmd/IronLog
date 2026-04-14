@@ -1960,6 +1960,8 @@ function buildExerciseCard(ex,ei){
   const swapBtn=exDone?'':`<button class="btn-swap" onclick="openSwap('${ex.id}','${ex.muscle}')">${t('workout_swap')}</button>`;
   const doneIcon=exDone?'<span style="color:#d4a846">✓ </span>':'';
   const cueText=t('cue_'+(ex.libId||''))||esc(ex.cues);
+  const ytUrl=ex.libId&&YOUTUBE[ex.libId];
+  const ytBtn=ytUrl?`<a class="yt-btn" href="${ytUrl}" target="_blank" rel="noopener noreferrer" aria-label="${t('yt_aria')}">▶</a>`:'';
   const lastInfo=lastW>0
     ?`<div class="last-info">${t('workout_last')} <span style="color:#f2f0ea;font-weight:600">${lastW}kg × ~${lastR} ${t('workout_reps')}</span>${bump?` <span style="color:#d4a846;font-weight:700">${t('workout_try')} ${Math.round(lastW*1.025*2)/2}kg</span>`:''}</div>`
     :'';
@@ -1974,7 +1976,7 @@ function buildExerciseCard(ex,ei){
   <div class="card ex-card" style="animation-delay:${ei*0.04}s;opacity:${exDone?0.45:1}" id="ex-card-${ex.id}">
     <div class="ex-header">
       <div class="ex-title-area">
-        <div class="ex-title">${doneIcon}${esc(t(ex.libId||ex.name))}<span class="mtag">${esc(t('muscle_'+ex.muscle))}</span></div>
+        <div class="ex-title">${doneIcon}${esc(t(ex.libId||ex.name))}${ytBtn}<span class="mtag">${esc(t('muscle_'+ex.muscle))}</span></div>
         <div class="ex-meta">${ex.sets} ${t('workout_sets')} · ${ex.repRange[0]}–${ex.repRange[1]} ${t('workout_reps')}</div>
       </div>
       <div class="ex-actions">${bumpBadge}${swapBtn}</div>
