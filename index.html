@@ -1901,6 +1901,12 @@ function finishWorkout(){
   }
   A.history=[...A.history,session];
   ls.set(SK.history,A.history);
+  A.sessionExercises.forEach(ex=>{
+    const sets=A.sessionSets[ex.id]||[];
+    const targetReps=ex.wupTargetReps||ex.repRange[1];
+    const succeeded=sets.length>0&&sets.every(s=>parseInt(s.reps)>=targetReps);
+    updateFailStreak(ex.libId||ex.id,succeeded);
+  });
   advanceDay(A.activeDayId);
   A.blockIdx=advanceBlockIfNeeded();
   A.previewBlockIdx=A.blockIdx;
@@ -2889,6 +2895,12 @@ function confirmFreeWorkout(){
     s.blockLabel=wantsCount?BLOCKS[A.blockIdx].label:"Free";
     A.history=[...A.history,s];
     ls.set(SK.history,A.history);
+    A.sessionExercises.forEach(ex=>{
+      const sets=A.sessionSets[ex.id]||[];
+      const targetReps=ex.wupTargetReps||ex.repRange[1];
+      const succeeded=sets.length>0&&sets.every(s=>parseInt(s.reps)>=targetReps);
+      updateFailStreak(ex.libId||ex.id,succeeded);
+    });
   }
   if(saveCb&&saveCb.checked&&s){
     const name=(nameInp&&nameInp.value.trim())||t('free_workout_label');
