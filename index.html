@@ -623,6 +623,9 @@ wup_goal_desc:"Sets your weekly rep pattern. Changing resets the cycle to Week 1
 wup_current_week:"Cycle week:",
 goal_hypertrophy:"Hypertrophy",goal_strength:"Strength",goal_fat_loss:"Fat Loss",
 ob_goal:"Training goal?",ob_goal_hypertrophy:"Build muscle",ob_goal_strength:"Get strong",ob_goal_fat_loss:"Lose fat",
+weekly_volume_title:"This Week",weekly_sets_label:"sets",weekly_target:"Target: 10+ sets / muscle group",
+notes_placeholder:"How did it feel? Any notes...",notes_label:"Session notes",
+pr_title:"Personal Records",pr_est_1rm:"est. 1RM",
 },
 fi:{
 // Exercise names
@@ -864,6 +867,9 @@ wup_goal_desc:"Määrittää viikoittaisen toistomallin. Muuttaminen nollaa sykl
 wup_current_week:"Syklin viikko:",
 goal_hypertrophy:"Lihasmassa",goal_strength:"Voima",goal_fat_loss:"Rasvanpoltto",
 ob_goal:"Treenitavoite?",ob_goal_hypertrophy:"Kasvata lihasta",ob_goal_strength:"Kehitä voimaa",ob_goal_fat_loss:"Polta rasvaa",
+weekly_volume_title:"Tämä viikko",weekly_sets_label:"sarjaa",weekly_target:"Tavoite: 10+ sarjaa / lihasryhmä",
+notes_placeholder:"Miltä tuntui? Muistiinpanoja...",notes_label:"Treenin muistiinpanot",
+pr_title:"Ennätykset",pr_est_1rm:"est. 1RM",
 }
 };
 
@@ -1530,6 +1536,52 @@ function getProgressData(libId){
   });
   return points;
 }
+function getWeeklySetsByMuscle(){
+  const now=new Date();
+  const day=(now.getDay()+6)%7; // ma=0
+  const weekStart=new Date(now);
+  weekStart.setDate(now.getDate()-day);
+  weekStart.setHours(0,0,0,0);
+  const weekEnd=new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate()+7);
+  const result={};
+  (A.history||[]).forEach(session=>{
+    const d=new Date(session.date);
+    if(d>=weekStart&&d<weekEnd){
+      (session.exercises||[]).forEach(ex=>{
+        const m=ex.muscle||'Other';
+        result[m]=(result[m]||0)+(ex.sets||[]).length;
+      });
+    }
+  });
+  return result;
+}
+function getPRs(){
+  const counts={};
+  const bests={};
+  (A.history||[]).forEach(session=>{
+    (session.exercises||[]).forEach(ex=>{
+      if(!ex.libId)return;
+      counts[ex.libId]=(counts[ex.libId]||0)+1;
+      (ex.sets||[]).forEach(st=>{
+        const w=parseFloat(st.weight)||0;
+        const r=parseInt(st.reps)||0;
+        if(w>0&&r>0){
+          if(!bests[ex.libId]||w>bests[ex.libId].weight){
+            bests[ex.libId]={weight:w,reps:r,muscle:ex.muscle,date:session.date};
+          }
+        }
+      });
+    });
+  });
+  return Object.entries(bests)
+    .filter(([libId])=>(counts[libId]||0)>=2)
+    .map(([libId,b])=>({
+      libId,weight:b.weight,reps:b.reps,
+      est1rm:Math.round(b.weight*(1+b.reps/30)),
+      muscle:b.muscle,date:b.date
+    }));
+}
 function renderProgressChart(libId){
   const data=getProgressData(libId);
   if(!data.length)return`<div style="text-align:center;color:#9090b0;font-size:13px;padding:20px 0">${t('chart_no_data')}</div>`;
@@ -1664,6 +1716,11 @@ const A={
   freeFilter:"All",
   isFreeWorkout:false,
   swapTarget:null,
+  prOpen:false,
+  weeklyOpen:false,
+  chartOpen:false,
+  sessionsOpen:false,
+  currentNotes:"",
   chartExercise:null,
   _openSessions:new Set(),
   // Internal timers
@@ -1924,6 +1981,15 @@ function finishWorkout(){
   navigate("complete");
 }
 
+function saveNotesAndGoHome(){
+  const notes=(A.currentNotes||'').trim();
+  if(notes&&A.completedSession&&A.history.length>0){
+    const idx=A.history.findIndex(s=>s.id===A.completedSession.id);
+    if(idx>=0){A.history[idx]={...A.history[idx],notes};ls.set(SK.history,A.history);}
+  }
+  A.currentNotes='';
+  navigate('home');
+}
 // ═══════════════════════════════════════════════════════════════════
 // DERIVED
 // ═══════════════════════════════════════════════════════════════════
@@ -2316,7 +2382,11 @@ function viewComplete(){
       <div style="font-weight:700;font-size:16px">${nd?nd.emoji+' '+esc(t('day_'+nd.label)||nd.label):''}</div>
       <div style="font-size:13px;color:#9090b0;margin-top:2px">${nd?esc(t('focus_'+nd.focus)||nd.focus):''}</div>
     </div>
-    <button class="btn-primary" onclick="navigate('home')">${t('complete_back')}</button>
+    <div class="card" style="margin-bottom:16px">
+      <div style="font-size:12px;color:#9090b0;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;font-weight:700">${t('notes_label')}</div>
+      <textarea placeholder="${t('notes_placeholder')}" rows="3" oninput="A.currentNotes=this.value" style="width:100%;box-sizing:border-box;background:#1c1c2e;color:#f2f0ea;border:1px solid #d4a84660;border-radius:8px;padding:10px;font-size:14px;font-family:inherit;resize:none;outline:none">${esc(A.currentNotes||'')}</textarea>
+    </div>
+    <button class="btn-primary" onclick="saveNotesAndGoHome()">${t('complete_back')}</button>
   </div>`;
 }
 
@@ -2333,9 +2403,70 @@ function viewHistory(){
       `<button class="chart-pill${A.chartExercise===lid?' active':''}" onclick="selectChartExercise('${lid}')">${t(lid)}</button>`
     ).join('');
     chartSection=`<div class="card" style="margin-bottom:16px">
-      <div class="sec-title" style="margin-bottom:8px">${t('chart_title')}</div>
-      <div class="chart-pills">${pills}</div>
-      ${renderProgressChart(A.chartExercise)}
+      <div class="row" style="cursor:pointer;user-select:none" onclick="A.chartOpen=!A.chartOpen;render()">
+        <div class="sec-title">${t('chart_title')}</div>
+        <div style="font-size:12px;color:#9090b0;transition:transform .2s;transform:rotate(${A.chartOpen?'180':'0'}deg)">▼</div>
+      </div>
+      ${A.chartOpen?`<div class="chart-pills">${pills}</div>${renderProgressChart(A.chartExercise)}`:''}
+    </div>`;
+  }
+  let weeklySection='';
+  const weekSets=getWeeklySetsByMuscle();
+  const activeMuscles=Object.keys(weekSets).filter(m=>weekSets[m]>0);
+  if(activeMuscles.length>0){
+    const MUSCLE_ORDER=['Quads','Hamstrings','Glutes','Calves','Chest','Back','Shoulders','Biceps','Triceps'];
+    const sorted=MUSCLE_ORDER.filter(m=>weekSets[m]>0).concat(activeMuscles.filter(m=>!MUSCLE_ORDER.includes(m)&&weekSets[m]>0));
+    const maxSets=Math.max(...sorted.map(m=>weekSets[m]),20);
+    const TARGET=10;
+    const bars=sorted.map(m=>{
+      const sets=weekSets[m];
+      const pct=Math.min(100,Math.round(sets/maxSets*100));
+      const targetPct=Math.min(100,Math.round(TARGET/maxSets*100));
+      const met=sets>=TARGET;
+      return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+        <div style="width:76px;font-size:12px;color:#9090b0;flex-shrink:0">${t('muscle_'+m)}</div>
+        <div style="flex:1;position:relative;height:10px;background:#1c1c2e;border-radius:5px;overflow:visible">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${met?'#d4a846':'#4a4a70'};border-radius:5px"></div>
+          <div style="position:absolute;left:${targetPct}%;top:-2px;height:14px;width:2px;background:#d4a84680;border-radius:1px"></div>
+        </div>
+        <div style="width:22px;font-size:12px;font-weight:700;color:${met?'#d4a846':'#9090b0'};text-align:right">${sets}</div>
+      </div>`;
+    }).join('');
+    weeklySection=`<div class="card" style="margin-bottom:16px">
+      <div class="row" style="cursor:pointer;user-select:none" onclick="A.weeklyOpen=!A.weeklyOpen;render()">
+        <div class="sec-title">${t('weekly_volume_title')}</div>
+        <div style="font-size:12px;color:#9090b0;transition:transform .2s;transform:rotate(${A.weeklyOpen?'180':'0'}deg)">▼</div>
+      </div>
+      ${A.weeklyOpen?`${bars}<div style="font-size:11px;color:#9090b0;margin-top:6px">${t('weekly_target')}</div>`:''}
+    </div>`;
+  }
+  let prSection='';
+  const prs=getPRs();
+  if(prs.length>0){
+    const MUSCLE_ORDER=['Quads','Hamstrings','Glutes','Calves','Chest','Back','Shoulders','Biceps','Triceps'];
+    const grouped={};
+    prs.forEach(pr=>{const m=pr.muscle||'Other';if(!grouped[m])grouped[m]=[];grouped[m].push(pr);});
+    const muscleKeys=MUSCLE_ORDER.filter(m=>grouped[m]).concat(Object.keys(grouped).filter(m=>!MUSCLE_ORDER.includes(m)&&grouped[m]));
+    const muscleRows=muscleKeys.map(m=>{
+      const rows=grouped[m].map(pr=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid #1c1c2e">
+          <div style="font-size:13px;color:#9090b0">${pr.libId?t(pr.libId):esc(pr.libId)}</div>
+          <div style="text-align:right">
+            <div style="font-size:14px;font-weight:700;color:#f2f0ea">${pr.weight}kg <span style="font-size:11px;color:#9090b0">× ${pr.reps}</span></div>
+            <div style="font-size:10px;color:#9090b0">${t('pr_est_1rm')} <span style="color:#d4a846;font-weight:700">${pr.est1rm}kg</span></div>
+          </div>
+        </div>`).join('');
+      return`<div style="margin-bottom:10px">
+        <div style="font-size:10px;font-weight:700;color:#d4a846;text-transform:uppercase;letter-spacing:.12em;margin-bottom:4px">${(T[getLang()]||T.en)['muscle_'+m]||m}</div>
+        ${rows}
+      </div>`;
+    }).join('');
+    prSection=`<div class="card" style="margin-bottom:16px">
+      <div class="row" style="cursor:pointer;user-select:none" onclick="A.prOpen=!A.prOpen;render()">
+        <div class="sec-title">🏆 ${t('pr_title')}</div>
+        <div style="font-size:12px;color:#9090b0;transition:transform .2s;transform:rotate(${A.prOpen?'180':'0'}deg)">▼</div>
+      </div>
+      ${A.prOpen?muscleRows:''}
     </div>`;
   }
   let content='';
@@ -2374,6 +2505,7 @@ function viewHistory(){
           ${session.partial?`<span class="tag" style="color:#ff4455;border:1px solid #ff445533">${t('history_partial')}</span>`:''}
         </div>
         ${A._openSessions&&A._openSessions.has(si)?`<div style="margin-top:6px">${exRows}
+          ${(session.notes&&session.notes.trim())?`<div style="font-size:13px;color:#9090b0;font-style:italic;margin-top:10px;padding-top:8px;border-top:1px solid #1c1c2e">"${esc(session.notes)}"</div>`:''}
           <button class="btn-tiny" style="color:#ff4455;border-color:#ff445533;margin-top:12px" onclick="event.stopPropagation();deleteSession(${hist.length-1-si})">${t('history_delete')}</button>
         </div>`:''}
       </div>`;
@@ -2383,8 +2515,13 @@ function viewHistory(){
   <div class="hdr"><div class="logo">RAUTALOKI</div></div>
   <div class="page">
     <div class="h2">${t('history_title')}</div>
+    ${weeklySection}
+    ${prSection}
     ${chartSection}
-    ${content}
+    ${hist.length?`<div class="row" style="cursor:pointer;user-select:none;padding:4px 0 12px" onclick="A.sessionsOpen=!A.sessionsOpen;render()">
+      <div class="sec-title">${t('stat_sessions')}</div>
+      <div style="font-size:12px;color:#9090b0;transition:transform .2s;transform:rotate(${A.sessionsOpen?'180':'0'}deg)">▼</div>
+    </div>${A.sessionsOpen?content:''}`:content}
   </div>
   ${navHTML("history")}`;
 }
@@ -2662,11 +2799,11 @@ function deleteSession(idx){
   render();
 }
 function exportCSV(){
-  const rows=[['Date','Day','Block','Exercise','Set','Reps','Weight(kg)','Duration(min)','Partial']];
+  const rows=[['Date','Day','Block','Exercise','Set','Reps','Weight(kg)','Duration(min)','Partial','Notes']];
   A.history.forEach(s=>{
     (s.exercises||[]).forEach(ex=>{
       (ex.sets||[]).forEach((st,si)=>{
-        rows.push([s.date,s.dayLabel||s.dayId,s.blockId||'',ex.name||ex.libId,si+1,st.reps,st.weight,s.duration,s.partial?'yes':'']);
+        rows.push([s.date,s.dayLabel||s.dayId,s.blockId||'',ex.name||ex.libId,si+1,st.reps,st.weight,s.duration,s.partial?'yes':'',si===0?s.notes||'':'']);
       });
     });
   });
@@ -2695,10 +2832,10 @@ function importCSV(){
           let m,re=/(".*?"|[^,]*)(,|$)/g;
           while((m=re.exec(lines[i]))!==null){cols.push(m[1]);if(m[2]==='')break;}
           const clean=cols.map(c=>c.replace(/^"|"$/g,'').replace(/""/g,'"'));
-          const [date,day,block,exName,setNum,reps,weight,duration,partial]=clean;
+          const [date,day,block,exName,setNum,reps,weight,duration,partial,notes]=clean;
           const key=date+'|'+day+'|'+block;
           if(!sessions[key])sessions[key]={id:Date.now()+i,date,dayId:day,dayLabel:day,blockId:block,blockLabel:block,
-            duration:parseInt(duration)||0,partial:partial==='yes',exercises:{}};
+            duration:parseInt(duration)||0,partial:partial==='yes',notes:notes||'',exercises:{}};
           if(!sessions[key].exercises[exName])sessions[key].exercises[exName]={id:exName,libId:exName,name:exName,muscle:'',sets:[]};
           sessions[key].exercises[exName].sets.push({reps:reps||'',weight:weight||'',done:true});
         }
