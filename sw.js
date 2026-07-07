@@ -1,10 +1,18 @@
-const CACHE_NAME = 'rautaloki-v3';
+const CACHE_NAME = 'rautaloki-v4';
 const ASSETS = [
-  '/index.html',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap'
+  './',
+  './index.html',
+  './styles.css',
+  './logic.js',
+  './data.js',
+  './app.js',
+  './manifest.json',
+  './icons/icon-192x192.png',
+  './icons/icon-512x512.png',
+  './fonts/DMSans.woff2',
+  './fonts/BarlowCondensed-700.woff2',
+  './fonts/BarlowCondensed-800.woff2',
+  './fonts/BarlowCondensed-900.woff2'
 ];
 
 // Install — cache core assets
