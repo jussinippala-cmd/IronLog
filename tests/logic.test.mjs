@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const require = createRequire(import.meta.url);
-const {roundToHalf, computeStartWeight, getWeekReps, est1RM, plateBreakdown, shouldRestAlert} = require('../logic.js');
+const {roundToHalf, computeStartWeight, getWeekReps, est1RM, plateBreakdown, shouldRestAlert, isoWeekNumber, tipLeft} = require('../logic.js');
 
 test('roundToHalf rounds to nearest 0.5', () => {
   assert.equal(roundToHalf(61.2), 61);
@@ -86,4 +86,27 @@ test('shouldRestAlert: skips negative overdue and absurdly stale (>10 min)', () 
   assert.equal(shouldRestAlert(-100), false);
   assert.equal(shouldRestAlert(600000), false);
   assert.equal(shouldRestAlert(3600000), false);
+});
+
+test('isoWeekNumber: mid-year date', () => {
+  assert.equal(isoWeekNumber(new Date(2026, 6, 19)), 29);
+});
+
+test('isoWeekNumber: ISO week 1 spans New Year', () => {
+  assert.equal(isoWeekNumber(new Date(2026, 0, 1)), 1);
+  assert.equal(isoWeekNumber(new Date(2024, 11, 30)), 1);
+});
+
+test('isoWeekNumber: early January can belong to week 52/53 of previous year', () => {
+  assert.equal(isoWeekNumber(new Date(2023, 0, 1)), 52);
+  assert.equal(isoWeekNumber(new Date(2027, 0, 1)), 53);
+});
+
+test('tipLeft: centers the tip on the cell when it fits', () => {
+  assert.equal(tipLeft(150, 100, 300), 100);
+});
+
+test('tipLeft: clamps at container edges', () => {
+  assert.equal(tipLeft(10, 100, 300), 4);
+  assert.equal(tipLeft(290, 100, 300), 196);
 });

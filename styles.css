@@ -178,7 +178,16 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer}
 .nav-btn svg{display:block}
 .yt-btn svg{display:block}
 /* Activity heatmap */
-.hm-grid{display:flex;gap:3px}
+.hm-wrap{display:flex;gap:4px;position:relative}
+.hm-cell.hit{cursor:pointer}
+.hm-cell.sel{outline:2px solid #f2f0ea;outline-offset:1px}
+.hm-tip{position:absolute;z-index:5;background:#252540;border:1px solid #3a3a5c;border-radius:8px;padding:7px 10px;font-size:11px;line-height:1.5;color:#f2f0ea;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.5);pointer-events:none;visibility:hidden}
+.hm-tip.pos{visibility:visible}
+.hm-tip-date{color:#d4a846;font-weight:700}
+.hm-days{display:flex;flex-direction:column;gap:3px;flex-shrink:0}
+.hm-day{flex:1;display:flex;align-items:center;font-size:9px;color:#9090b0;line-height:1}
+.hm-wk{height:11px;font-size:8px;color:#9090b0;text-align:center;line-height:11px;flex-shrink:0;overflow:hidden}
+.hm-grid{display:flex;gap:3px;flex:1;min-width:0}
 .hm-col{display:flex;flex-direction:column;gap:3px;flex:1}
 .hm-cell{width:100%;aspect-ratio:1;border-radius:3px;background:#1c1c2e}
 .hm-cell.hit{background:#d4a846}

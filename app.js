@@ -255,9 +255,7 @@ function getISOWeekKey(date=new Date()){
   const day=d.getDay();
   d.setDate(d.getDate()+(day===0?-6:1-day));
   d.setHours(0,0,0,0);
-  const jan4=new Date(d.getFullYear(),0,4);
-  const weekNum=Math.ceil(((d-jan4)/86400000+jan4.getDay()+1)/7);
-  return`${d.getFullYear()}-W${String(weekNum).padStart(2,'0')}`;
+  return`${d.getFullYear()}-W${String(isoWeekNumber(d)).padStart(2,'0')}`;
 }
 function getWupState(){
   return{
@@ -1123,7 +1121,7 @@ function viewComplete(){
       <div style="font-size:12px;font-weight:700;color:#d4a846;margin-bottom:6px;text-transform:uppercase;letter-spacing:.1em">🎉 ${t('pr_new')}</div>
       ${A.newPRs.map(p=>`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="font-size:14px">${esc(t(p.libId))}</span><span style="font-size:14px;font-weight:700;color:#d4a846">${p.prev}kg → ${p.weight}kg</span></div>`).join('')}
     </div>`:'';
-  const dayLabel=s.dayLabel?t('day_'+s.dayLabel)||s.dayLabel:s.dayLabel;
+  const dayLabel=dayLabelText(s.dayLabel);
   return`
   <div class="page">
     <div class="complete-center">
@@ -1152,10 +1150,28 @@ function viewComplete(){
 }
 
 // ── Activity heatmap + weekly streak ──
-function getTrainingDayKeys(){
-  const s=new Set();
-  A.history.forEach(h=>{const d=new Date(h.date);s.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);});
-  return s;
+// Day label for display: translated program-day key when one exists,
+// otherwise the stored label as-is (free/custom workout names).
+function dayLabelText(l){if(!l)return'';const k='day_'+l,s=t(k);return s===k?l:s;}
+function getSessionsByDay(){
+  const m={};
+  A.history.forEach(h=>{const d=new Date(h.date);const k=`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;(m[k]=m[k]||[]).push(h);});
+  return m;
+}
+function hmSelect(key){
+  A._hmSel=A._hmSel===key?null:key;
+  render();
+}
+function positionHmTip(){
+  const tip=document.getElementById('hm-tip'),cell=document.querySelector('.hm-cell.sel'),wrap=document.querySelector('.hm-wrap');
+  if(!tip||!cell||!wrap)return;
+  const wr=wrap.getBoundingClientRect(),cr=cell.getBoundingClientRect(),tr=tip.getBoundingClientRect();
+  const center=cr.left-wr.left+cr.width/2;
+  tip.style.left=`${tipLeft(center,tr.width,wr.width)}px`;
+  let top=cr.top-wr.top-tr.height-6;
+  if(top<0)top=cr.bottom-wr.top+6;
+  tip.style.top=`${top}px`;
+  tip.classList.add('pos');
 }
 function getWeekStreak(){
   const weeks=new Set(A.history.map(h=>getISOWeekKey(new Date(h.date))));
@@ -1166,22 +1182,37 @@ function getWeekStreak(){
   return streak;
 }
 function buildHeatmapHTML(){
-  const days=getTrainingDayKeys();
+  const byDay=getSessionsByDay();
   const now=new Date();now.setHours(0,0,0,0);
   const dow=(now.getDay()+6)%7;
   const end=new Date(now);end.setDate(now.getDate()+(6-dow));
   const WEEKS=16;
   let cols='';
   for(let w=WEEKS-1;w>=0;w--){
-    let col='';
+    const monday=new Date(end);monday.setDate(end.getDate()-w*7-6);
+    let col=`<div class="hm-wk">${isoWeekNumber(monday)}</div>`;
     for(let d=6;d>=0;d--){
       const cur=new Date(end);cur.setDate(end.getDate()-w*7-d);
       const key=`${cur.getFullYear()}-${cur.getMonth()}-${cur.getDate()}`;
-      col+=`<div class="hm-cell${days.has(key)?' hit':''}${cur>now?' future':''}"></div>`;
+      const hit=!!byDay[key];
+      col+=`<div class="hm-cell${hit?' hit':''}${cur>now?' future':''}${A._hmSel===key?' sel':''}"${hit?` onclick="hmSelect('${key}')"`:''}></div>`;
     }
     cols+=`<div class="hm-col">${col}</div>`;
   }
-  return`<div class="hm-grid">${cols}</div>`;
+  const dayLabels=[0,1,2,3,4,5,6].map(i=>`<div class="hm-day">${t('dow_'+i)}</div>`).join('');
+  let tip='';
+  const sel=A._hmSel&&byDay[A._hmSel];
+  if(sel){
+    const[y,mo,da]=A._hmSel.split('-').map(Number);
+    const ds=new Date(y,mo,da).toLocaleDateString(getLang()==='fi'?'fi-FI':'en-GB',{weekday:'short',day:'numeric',month:'short'});
+    const rows=sel.map(s=>`<div>${esc(dayLabelText(s.dayLabel))}${s.blockLabel?` · ${t('block_label')} ${s.blockId||''}`:''}</div>`).join('');
+    tip=`<div class="hm-tip" id="hm-tip"><div class="hm-tip-date">${ds}</div>${rows}</div>`;
+  }
+  return`<div class="hm-wrap">
+    <div class="hm-days"><div class="hm-wk"></div>${dayLabels}</div>
+    <div class="hm-grid">${cols}</div>
+    ${tip}
+  </div>`;
 }
 
 // ── Body weight log ──
@@ -1317,25 +1348,25 @@ function viewHistory(){
           <div style="font-size:13px;font-weight:700">${maxW}kg</div>
         </div>`;
       });
-      const sessionDayLabel=session.dayLabel?t('day_'+session.dayLabel)||session.dayLabel:session.dayLabel;
-      content+=`<div class="card" style="cursor:pointer" onclick="toggleSession(${si})">
+      const sessionDayLabel=dayLabelText(session.dayLabel);
+      const open=A._openSessions&&A._openSessions.has(si);
+      content+=`<div style="border-top:1px solid #1c1c2e;padding:10px 0 ${open?'6px':'10px'};cursor:pointer" onclick="toggleSession(${si})">
         <div class="row">
-          <div style="font-weight:700;font-size:15px">${esc(sessionDayLabel||'')}</div>
+          <div style="font-weight:700;font-size:14px">${esc(sessionDayLabel||'')}</div>
           <div style="display:flex;align-items:center;gap:8px">
-            <div style="text-align:right">
-              <div style="font-size:11px;color:#d4a846;font-weight:700">${ds}</div>
-              ${session.blockLabel?`<div style="font-size:10px;color:#9090b0;margin-top:1px">${t('block_label')} ${session.blockId||''}</div>`:''}
-            </div>
-            <div style="font-size:12px;color:#9090b0;transition:transform .2s;transform:rotate(${A._openSessions&&A._openSessions.has(si)?'180':'0'}deg)">▼</div>
+            <div style="font-size:11px;color:#d4a846;font-weight:700">${ds}</div>
+            ${session.blockLabel?`<div style="font-size:10px;color:#9090b0">${t('block_label')} ${session.blockId||''}</div>`:''}
+            <div style="font-size:12px;color:#9090b0;transition:transform .2s;transform:rotate(${open?'180':'0'}deg)">▼</div>
           </div>
         </div>
-        <div style="font-size:12px;color:#9090b0;margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
-          <span class="tag">${session.duration} ${t('complete_min')}</span>
-          <span class="tag">${(session.exercises||[]).length} ${t('history_ex')}</span>
-          ${vol>0?`<span class="tag">${Math.round(vol)}kg ${t('history_vol')}</span>`:''}
-          ${session.partial?`<span class="tag" style="color:#ff4455;border:1px solid #ff445533">${t('history_partial')}</span>`:''}
-        </div>
-        ${A._openSessions&&A._openSessions.has(si)?`<div style="margin-top:6px">${exRows}
+        ${open?`<div style="margin-top:8px">
+          <div style="font-size:12px;color:#9090b0;display:flex;gap:6px;flex-wrap:wrap">
+            <span class="tag">${session.duration} ${t('complete_min')}</span>
+            <span class="tag">${(session.exercises||[]).length} ${t('history_ex')}</span>
+            ${vol>0?`<span class="tag">${Math.round(vol)}kg ${t('history_vol')}</span>`:''}
+            ${session.partial?`<span class="tag" style="color:#ff4455;border:1px solid #ff445533">${t('history_partial')}</span>`:''}
+          </div>
+          <div style="margin-top:6px">${exRows}</div>
           ${(session.notes&&session.notes.trim())?`<div style="font-size:13px;color:#9090b0;font-style:italic;margin-top:10px;padding-top:8px;border-top:1px solid #1c1c2e">"${esc(session.notes)}"</div>`:''}
           <button class="btn-tiny" style="color:#ff4455;border-color:#ff445533;margin-top:12px" onclick="event.stopPropagation();deleteSession(${hist.length-1-si})">${t('history_delete')}</button>
         </div>`:''}
@@ -1351,10 +1382,13 @@ function viewHistory(){
     ${prSection}
     ${chartSection}
     ${bwSection}
-    ${hist.length?`<div class="row" style="cursor:pointer;user-select:none;padding:4px 0 12px" onclick="A.sessionsOpen=!A.sessionsOpen;render()">
-      <div class="sec-title">${t('stat_sessions')}</div>
-      <div style="font-size:12px;color:#9090b0;transition:transform .2s;transform:rotate(${A.sessionsOpen?'180':'0'}deg)">▼</div>
-    </div>${A.sessionsOpen?content:''}`:content}
+    ${hist.length?`<div class="card" style="margin-bottom:16px">
+      <div class="row" style="cursor:pointer;user-select:none" onclick="A.sessionsOpen=!A.sessionsOpen;render()">
+        <div class="sec-title">${t('stat_sessions')}</div>
+        <div style="font-size:12px;color:#9090b0;transition:transform .2s;transform:rotate(${A.sessionsOpen?'180':'0'}deg)">▼</div>
+      </div>
+      ${A.sessionsOpen?`<div style="margin-top:10px">${content}</div>`:''}
+    </div>`:content}
   </div>
   ${navHTML("history")}`;
 }
@@ -1971,6 +2005,7 @@ function render(){
   else if(A.view==='freeBuilder')html=viewFreeBuilder();
   else if(A.view==='freeComplete')html=viewFreeComplete();
   app.innerHTML=html;
+  if(A.view==='history'&&A._hmSel)requestAnimationFrame(positionHmTip);
   // After render, bind kg inputs (oninput in HTML attr can't pass complex args)
   if(A.view==='workout'){
     A.sessionExercises.forEach(ex=>{

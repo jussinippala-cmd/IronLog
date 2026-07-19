@@ -30,6 +30,23 @@ function getWeekReps(repRange,weekInCycle,goal){
 // app backgrounded) and just woke up — alert then too, but drop absurdly stale ones.
 function shouldRestAlert(overdueMs){return overdueMs>=0&&overdueMs<600000;}
 
+// ISO-8601 week number (1-53) of the given date. Anchors on the week's
+// Thursday, which decides the ISO year — Monday-anchoring gets year
+// boundaries wrong (e.g. Mon 2024-12-30 is week 1 of 2025).
+function isoWeekNumber(date){
+  const d=new Date(date);
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate()+3-((d.getDay()+6)%7));
+  const week1=new Date(d.getFullYear(),0,4);
+  return 1+Math.round(((d-week1)/86400000-3+((week1.getDay()+6)%7))/7);
+}
+
+// Horizontal position for a tooltip centered on `center`, clamped so a
+// tip of width tipW stays `pad` px inside a container of width containerW.
+function tipLeft(center,tipW,containerW,pad=4){
+  return Math.max(pad,Math.min(center-tipW/2,containerW-tipW-pad));
+}
+
 // Epley estimate
 function est1RM(weight,reps){return Math.round(weight*(1+reps/30));}
 
@@ -47,5 +64,5 @@ function plateBreakdown(total,barWeight,plateSizes){
 }
 
 if(typeof module!=='undefined'&&module.exports){
-  module.exports={roundToHalf,computeStartWeight,getWeekReps,est1RM,plateBreakdown,shouldRestAlert};
+  module.exports={roundToHalf,computeStartWeight,getWeekReps,est1RM,plateBreakdown,shouldRestAlert,isoWeekNumber,tipLeft};
 }
