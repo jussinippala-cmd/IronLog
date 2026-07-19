@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const require = createRequire(import.meta.url);
-const {roundToHalf, computeStartWeight, getWeekReps, est1RM, plateBreakdown} = require('../logic.js');
+const {roundToHalf, computeStartWeight, getWeekReps, est1RM, plateBreakdown, shouldRestAlert} = require('../logic.js');
 
 test('roundToHalf rounds to nearest 0.5', () => {
   assert.equal(roundToHalf(61.2), 61);
@@ -74,4 +74,16 @@ test('plateBreakdown: leftover when weight not plate-divisible', () => {
   const r = plateBreakdown(21.4, 20);
   assert.deepEqual(r.plates, [0.5]);
   assert.ok(r.remainder > 0 && r.remainder < 0.5);
+});
+
+test('shouldRestAlert: fires on fresh expiry and on late notice after page suspend', () => {
+  assert.equal(shouldRestAlert(0), true);
+  assert.equal(shouldRestAlert(4000), true);
+  assert.equal(shouldRestAlert(120000), true);
+});
+
+test('shouldRestAlert: skips negative overdue and absurdly stale (>10 min)', () => {
+  assert.equal(shouldRestAlert(-100), false);
+  assert.equal(shouldRestAlert(600000), false);
+  assert.equal(shouldRestAlert(3600000), false);
 });

@@ -363,9 +363,19 @@ function beep(){
 }
 function restFinishedAlert(){
   if(navigator.vibrate)navigator.vibrate([200,100,200]);
+  ensureAudio();
   beep();
   if(document.hidden&&'Notification'in window&&Notification.permission==='granted'){
-    try{new Notification('Rautaloki',{body:t('rest_done'),tag:'rest-timer'});}catch{}
+    const opts={body:t('rest_done'),tag:'rest-timer'};
+    // Android Chrome throws on the page-context Notification constructor;
+    // notifications must go through the service worker registration there.
+    if(navigator.serviceWorker){
+      navigator.serviceWorker.ready
+        .then(reg=>reg.showNotification('Rautaloki',opts))
+        .catch(()=>{try{new Notification('Rautaloki',opts);}catch{}});
+    }else{
+      try{new Notification('Rautaloki',opts);}catch{}
+    }
   }
 }
 
@@ -402,7 +412,7 @@ function tickRest(){
     A.restTimer=null;
     A._restEndTime=null;
     refreshRestBar();
-    if(overdue<5000)restFinishedAlert();
+    if(shouldRestAlert(overdue))restFinishedAlert();
   }
 }
 function skipRest(){clearInterval(A._restInterval);A.restTimer=null;A._restEndTime=null;refreshRestBar();}

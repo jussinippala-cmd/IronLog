@@ -25,6 +25,11 @@ function getWeekReps(repRange,weekInCycle,goal){
   return Math.max(1,tbl[weekInCycle-1]||hi);
 }
 
+// Whether the rest-over alert should still fire, given how late it was noticed (ms).
+// Overdue exceeds a few seconds only when the page was suspended (phone locked /
+// app backgrounded) and just woke up — alert then too, but drop absurdly stale ones.
+function shouldRestAlert(overdueMs){return overdueMs>=0&&overdueMs<600000;}
+
 // Epley estimate
 function est1RM(weight,reps){return Math.round(weight*(1+reps/30));}
 
@@ -42,5 +47,5 @@ function plateBreakdown(total,barWeight,plateSizes){
 }
 
 if(typeof module!=='undefined'&&module.exports){
-  module.exports={roundToHalf,computeStartWeight,getWeekReps,est1RM,plateBreakdown};
+  module.exports={roundToHalf,computeStartWeight,getWeekReps,est1RM,plateBreakdown,shouldRestAlert};
 }

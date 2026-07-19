@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rautaloki-v4';
+const CACHE_NAME = 'rautaloki-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -31,6 +31,19 @@ self.addEventListener('activate', e => {
     )
   );
   self.clients.claim();
+});
+
+// Notification click — focus the app (or open it) instead of doing nothing
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const c of list) {
+        if ('focus' in c) return c.focus();
+      }
+      return clients.openWindow('./');
+    })
+  );
 });
 
 // Fetch — network first, fall back to cache
