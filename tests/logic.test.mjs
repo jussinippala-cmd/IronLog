@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const require = createRequire(import.meta.url);
-const {roundToHalf, computeStartWeight, getWeekReps, est1RM, plateBreakdown, shouldRestAlert, isoWeekNumber, tipLeft} = require('../logic.js');
+const {roundToHalf, computeStartWeight, getWeekReps, est1RM, plateBreakdown, shouldRestAlert, isoWeekNumber, tipLeft, matchExerciseNames, exerciseKey, nextCycleReps} = require('../logic.js');
 
 test('roundToHalf rounds to nearest 0.5', () => {
   assert.equal(roundToHalf(61.2), 61);
@@ -109,4 +109,38 @@ test('tipLeft: centers the tip on the cell when it fits', () => {
 test('tipLeft: clamps at container edges', () => {
   assert.equal(tipLeft(10, 100, 300), 4);
   assert.equal(tipLeft(290, 100, 300), 196);
+});
+
+test('matchExerciseNames: case-insensitive substring match', () => {
+  const names = ['Kyykky', 'Penkkipunnerrus', 'Maastaveto'];
+  assert.deepEqual(matchExerciseNames(names, 'kyk'), []);
+  assert.deepEqual(matchExerciseNames(names, 'kyy'), ['Kyykky']);
+  assert.deepEqual(matchExerciseNames(names, 'PUNN'), ['Penkkipunnerrus']);
+});
+
+test('matchExerciseNames: empty query returns all, exclusions removed', () => {
+  const names = ['Kyykky', 'Penkkipunnerrus'];
+  assert.deepEqual(matchExerciseNames(names, ''), ['Kyykky', 'Penkkipunnerrus']);
+  assert.deepEqual(matchExerciseNames(names, '', ['Kyykky']), ['Penkkipunnerrus']);
+  assert.deepEqual(matchExerciseNames(names, 'kyy', ['Kyykky']), []);
+});
+
+test('exerciseKey: libId wins, name is the fallback', () => {
+  assert.equal(exerciseKey({libId: 'ex_squat', name: 'Squat'}), 'ex_squat');
+  assert.equal(exerciseKey({name: 'Oma liike'}), 'Oma liike');
+  assert.equal(exerciseKey({}), '');
+});
+
+test('nextCycleReps: counts down from hi, dips 2 below lo, then wraps', () => {
+  assert.equal(nextCycleReps(NaN, 8, 12), 12);
+  assert.equal(nextCycleReps(12, 8, 12), 11);
+  assert.equal(nextCycleReps(8, 8, 12), 7);
+  assert.equal(nextCycleReps(6, 8, 12), 12);
+});
+
+test('nextCycleReps: never surfaces 0 or negative reps when lo is 1 or 2', () => {
+  assert.equal(nextCycleReps(1, 1, 15), 15);
+  assert.equal(nextCycleReps(2, 1, 15), 1);
+  assert.equal(nextCycleReps(2, 2, 15), 1);
+  assert.equal(nextCycleReps(1, 2, 15), 15);
 });

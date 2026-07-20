@@ -11,6 +11,7 @@ const ls={
 // PROFILE
 // ═══════════════════════════════════════════════════════════════════
 function getProfile(){return ls.get("il_profile")||null;}
+function getMode(){const p=getProfile();return p&&p.mode==='log'?'log':'program';}
 function saveProfile(p){ls.set("il_profile",p);}
 function getSettings(){return ls.get("il_settings")||{restSeconds:90};}
 function saveSetting(key,val){const s=getSettings();s[key]=val;ls.set("il_settings",s);}
@@ -102,16 +103,17 @@ function getExercisesWithHistory(){
   const seen=new Map();
   A.history.forEach(s=>{
     (s.exercises||[]).forEach(ex=>{
-      if(!ex.libId||seen.has(ex.libId))return;
-      if((ex.sets||[]).some(st=>parseFloat(st.weight)>0))seen.set(ex.libId,true);
+      const key=exerciseKey(ex);
+      if(!key||seen.has(key))return;
+      if((ex.sets||[]).some(st=>parseFloat(st.weight)>0))seen.set(key,true);
     });
   });
   return[...seen.keys()];
 }
-function getProgressData(libId){
+function getProgressData(key){
   const points=[];
   A.history.forEach(s=>{
-    const ex=(s.exercises||[]).find(e=>e.libId===libId);
+    const ex=(s.exercises||[]).find(e=>exerciseKey(e)===key);
     if(!ex)return;
     const wts=(ex.sets||[]).map(st=>parseFloat(st.weight)||0).filter(w=>w>0);
     if(!wts.length)return;
@@ -144,23 +146,24 @@ function getPRs(){
   const bests={};
   (A.history||[]).forEach(session=>{
     (session.exercises||[]).forEach(ex=>{
-      if(!ex.libId)return;
-      counts[ex.libId]=(counts[ex.libId]||0)+1;
+      const key=exerciseKey(ex);
+      if(!key)return;
+      counts[key]=(counts[key]||0)+1;
       (ex.sets||[]).forEach(st=>{
         const w=parseFloat(st.weight)||0;
         const r=parseInt(st.reps)||0;
         if(w>0&&r>0){
-          if(!bests[ex.libId]||w>bests[ex.libId].weight){
-            bests[ex.libId]={weight:w,reps:r,muscle:ex.muscle,date:session.date};
+          if(!bests[key]||w>bests[key].weight){
+            bests[key]={weight:w,reps:r,muscle:ex.muscle,date:session.date,libId:ex.libId,name:ex.name};
           }
         }
       });
     });
   });
   return Object.entries(bests)
-    .filter(([libId])=>(counts[libId]||0)>=2)
-    .map(([libId,b])=>({
-      libId,weight:b.weight,reps:b.reps,
+    .filter(([key])=>(counts[key]||0)>=2)
+    .map(([key,b])=>({
+      key,libId:b.libId,name:b.name,weight:b.weight,reps:b.reps,
       est1rm:est1RM(b.weight,b.reps),
       muscle:b.muscle,date:b.date
     }));
@@ -170,17 +173,19 @@ function getPRs(){
 function detectNewPRs(session){
   const prevBest={};
   A.history.forEach(s=>(s.exercises||[]).forEach(ex=>{
-    if(!ex.libId)return;
+    const key=exerciseKey(ex);
+    if(!key)return;
     (ex.sets||[]).forEach(st=>{
       const w=parseFloat(st.weight)||0;
-      if(w>(prevBest[ex.libId]||0))prevBest[ex.libId]=w;
+      if(w>(prevBest[key]||0))prevBest[key]=w;
     });
   }));
   const prs=[];
   (session.exercises||[]).forEach(ex=>{
-    if(!ex.libId||!(ex.libId in prevBest))return;
+    const key=exerciseKey(ex);
+    if(!key||!(key in prevBest))return;
     const w=Math.max(...(ex.sets||[]).filter(s=>s.done).map(s=>parseFloat(s.weight)||0),0);
-    if(w>prevBest[ex.libId])prs.push({libId:ex.libId,weight:w,prev:prevBest[ex.libId]});
+    if(w>prevBest[key])prs.push({key,libId:ex.libId,name:ex.name,weight:w,prev:prevBest[key]});
   });
   return prs;
 }
@@ -306,6 +311,7 @@ const A={
   freeExerciseIds:[],
   freeFilter:"All",
   isFreeWorkout:false,
+  isLogWorkout:false,
   swapTarget:null,
   prOpen:false,
   weeklyOpen:false,
@@ -326,12 +332,18 @@ const A={
 // ═══════════════════════════════════════════════════════════════════
 // TIMER MANAGEMENT (timestamp-based — survives phone sleep)
 // ═══════════════════════════════════════════════════════════════════
+function elapsedLabel(){
+  if(A.isFreeWorkout)return`${t('free_workout_label')} · ${fmtTime(A.elapsed)}`;
+  if(A.isLogWorkout)return`${t('log_workout_label')} · ${fmtTime(A.elapsed)}`;
+  const blk=BLOCKS[A.blockIdx];
+  return blk?`${t('block_label')} ${blk.id} · ${t('home_day')} ${A.activeDayId} · ${fmtTime(A.elapsed)}`:'';
+}
 function startElapsed(){
   clearInterval(A._elapsedInterval);
   A._elapsedInterval=setInterval(()=>{
     A.elapsed=Math.floor((Date.now()-A.sessionStart)/1000);
     const el=document.getElementById('elapsed-txt');
-    if(el)el.textContent=A.isFreeWorkout?`${t('free_workout_label')} · ${fmtTime(A.elapsed)}`:`${t('block_label')} ${BLOCKS[A.blockIdx].id} · ${t('home_day')} ${A.activeDayId} · ${fmtTime(A.elapsed)}`;
+    if(el)el.textContent=elapsedLabel();
   },1000);
 }
 function stopElapsed(){clearInterval(A._elapsedInterval);A.elapsed=0;}
@@ -433,8 +445,7 @@ document.addEventListener('visibilitychange',()=>{
     if(A.sessionStart){
       A.elapsed=Math.floor((Date.now()-A.sessionStart)/1000);
       const el=document.getElementById('elapsed-txt');
-      const blk=BLOCKS[A.blockIdx];
-      if(el)el.textContent=A.isFreeWorkout?`${t('free_workout_label')} · ${fmtTime(A.elapsed)}`:(blk?`${t('block_label')} ${blk.id} · ${t('home_day')} ${A.activeDayId} · ${fmtTime(A.elapsed)}`:'');
+      if(el)el.textContent=elapsedLabel();
     }
   }
 });
@@ -465,7 +476,7 @@ function persistSession(){
   if(!A.sessionStart)return;
   ls.set(SK.activeSession,{
     exercises:A.sessionExercises,sets:A.sessionSets,start:A.sessionStart,
-    dayId:A.activeDayId,blockIdx:A.blockIdx,isFree:A.isFreeWorkout
+    dayId:A.activeDayId,blockIdx:A.blockIdx,isFree:A.isFreeWorkout,isLog:A.isLogWorkout
   });
 }
 function clearActiveSession(){try{localStorage.removeItem(SK.activeSession);}catch{}}
@@ -478,6 +489,7 @@ function restoreSession(){
   A.sessionStart=s.start;
   A.activeDayId=s.dayId||A.activeDayId;
   A.isFreeWorkout=!!s.isFree;
+  A.isLogWorkout=!!s.isLog;
   A.elapsed=Math.floor((Date.now()-s.start)/1000);
   startElapsed();
   requestWakeLock();
@@ -533,6 +545,78 @@ function startFreeWorkout(exerciseIds){
   persistSession();
   navigate("workout");
 }
+// ── Log-only mode: no program, freely typed exercises ──
+function startLogWorkout(){
+  A.sessionExercises=[];
+  A.sessionSets={};
+  A.sessionStart=Date.now();
+  A.elapsed=0;
+  A.restTimer=null;
+  A.isFreeWorkout=false;
+  A.isLogWorkout=true;
+  clearInterval(A._restInterval);A._restEndTime=null;
+  startElapsed();
+  requestWakeLock();
+  persistSession();
+  navigate("workout");
+}
+// Own past exercise names (log-mode entries only — no libId), for autocomplete.
+function getLoggedExerciseNames(){
+  const seen=new Set();
+  A.history.forEach(s=>(s.exercises||[]).forEach(ex=>{if(!ex.libId&&ex.name)seen.add(ex.name);}));
+  return[...seen];
+}
+// Most recent weight logged under this exact name — own data, not a suggestion.
+function logPrefillWeight(name){
+  const nl=name.toLowerCase();
+  for(let i=A.history.length-1;i>=0;i--){
+    const ex=(A.history[i].exercises||[]).find(e=>!e.libId&&(e.name||'').toLowerCase()===nl);
+    if(ex){
+      const wts=(ex.sets||[]).map(s=>parseFloat(s.weight)||0).filter(w=>w>0);
+      if(wts.length)return String(Math.max(...wts));
+    }
+  }
+  return'';
+}
+function addLogExercise(){
+  const inp=document.getElementById('log-ex-inp');
+  if(!inp)return;
+  const name=inp.value.trim();
+  if(!name)return;
+  const id='log'+Date.now()+Math.random().toString(36).slice(2,6);
+  const w=logPrefillWeight(name);
+  const ex={id,name,muscle:'Other',repRange:[1,15],sets:3};
+  A.sessionExercises=[...A.sessionExercises,ex];
+  A.sessionSets[ex.id]=Array.from({length:3},()=>({reps:"",weight:w,done:false,editing:false}));
+  persistSession();
+  render();
+}
+function addLogSet(exId){
+  const sets=A.sessionSets[exId];
+  if(!sets)return;
+  const lastW=sets.length?sets[sets.length-1].weight:"";
+  sets.push({reps:"",weight:lastW,done:false,editing:false});
+  const ex=A.sessionExercises.find(e=>e.id===exId);
+  if(ex)ex.sets=sets.length;
+  persistSession();
+  render();
+}
+function removeLogSet(exId){
+  const sets=A.sessionSets[exId];
+  if(!sets||sets.length<=1)return;
+  sets.pop();
+  const ex=A.sessionExercises.find(e=>e.id===exId);
+  if(ex)ex.sets=sets.length;
+  persistSession();
+  render();
+}
+function removeLogExercise(exId){
+  A.sessionExercises=A.sessionExercises.filter(e=>e.id!==exId);
+  delete A.sessionSets[exId];
+  persistSession();
+  render();
+}
+
 function swapExercise(oldId,newEx){
   closeSwap();
   const wupNew=applyWupToExercises([newEx])[0];
@@ -548,10 +632,10 @@ function swapExercise(oldId,newEx){
 function cycleReps(exId,idx,repRange,wupTarget=null){
   const sets=A.sessionSets[exId];
   if(!sets)return;
-  const current=parseInt(sets[idx].reps);
+  const current=sets[idx].reps?parseInt(sets[idx].reps):NaN;
   const[lo]=repRange;
   const hi=wupTarget!==null?wupTarget:repRange[1];
-  const next=(!sets[idx].reps||isNaN(current)||current<=lo-2)?hi:current-1;
+  const next=nextCycleReps(current,lo,hi);
   sets[idx]={...sets[idx],reps:String(next)};
   // Only re-render the specific rep button to avoid full page flicker
   const btn=document.getElementById(`rep-btn-${exId}-${idx}`);
@@ -619,14 +703,15 @@ function updateKg(exId,idx,val){
 function finishWorkout(){
   if(!allDone())return;
   const isFree=A.isFreeWorkout;
-  const block=BLOCKS[A.blockIdx]||BLOCKS[0];
+  const isLog=A.isLogWorkout;
+  const block=(!isFree&&!isLog)?(BLOCKS[A.blockIdx]||BLOCKS[0]):null;
   const session={
     id:Date.now(),
     date:new Date().toISOString(),
-    blockId:isFree?"free":block.id,
-    blockLabel:isFree?"Free":block.label,
-    dayId:isFree?"free":A.activeDayId,
-    dayLabel:isFree?t('free_workout_label'):(block.days.find(d=>d.id===A.activeDayId)||{label:A.activeDayId}).label,
+    blockId:isFree?"free":isLog?"log":block.id,
+    blockLabel:isFree?"Free":isLog?"Log":block.label,
+    dayId:isFree?"free":isLog?"log":A.activeDayId,
+    dayLabel:isFree?t('free_workout_label'):isLog?t('log_workout_label'):(block.days.find(d=>d.id===A.activeDayId)||{label:A.activeDayId}).label,
     duration:Math.round((Date.now()-A.sessionStart)/60000),
     exercises:A.sessionExercises.map(ex=>({
       id:ex.id,libId:ex.libId,name:ex.name,muscle:ex.muscle,
@@ -646,6 +731,11 @@ function finishWorkout(){
   }
   A.history=[...A.history,session];
   ls.set(SK.history,A.history);
+  if(isLog){
+    A.isLogWorkout=false;
+    navigate("complete");
+    return;
+  }
   A.sessionExercises.forEach(ex=>{
     const sets=A.sessionSets[ex.id]||[];
     const targetReps=ex.wupTargetReps||ex.repRange[1];
@@ -808,24 +898,26 @@ function handleEmojiTap(exId,idx){
 function buildExerciseCard(ex,ei){
   const sets=A.sessionSets[ex.id]||[];
   const exDone=sets.length>0&&sets.every(s=>s.done);
-  const bump=shouldIncrease(ex.id,ex.repRange[1],ex.libId);
+  const isLogEx=!ex.libId&&A.isLogWorkout;
+  const bump=!isLogEx&&shouldIncrease(ex.id,ex.repRange[1],ex.libId);
   const prev=getExerciseHistory(ex.id,ex.libId);
   const lastS=prev.length?prev[prev.length-1]:null;
   const wts=lastS?lastS.sets.map(s=>parseFloat(s.weight)||0).filter(w=>w>0):[];
   const lastW=wts.length?Math.max(...wts):0;
   const lastR=lastS&&lastS.sets.length?Math.round(lastS.sets.reduce((a,s)=>a+(parseInt(s.reps)||0),0)/lastS.sets.length):0;
 
-  const deload=isDeloadWeek();
+  const deload=!isLogEx&&isDeloadWeek();
   const bumpBadge=bump&&!exDone&&!deload?`<span class="badge" style="background:#d4a84622;color:#d4a846">${t('workout_load')}</span>`:
     deload&&!exDone?`<span class="badge" style="background:#e8c55a22;color:#e8c55a">📉 ${t('wup_deload_label')}</span>`:'';
-  const swapBtn=exDone?'':`<button class="btn-swap" onclick="openSwap('${ex.id}','${ex.muscle}')">${t('workout_swap')}</button>`;
+  const swapBtn=(isLogEx||exDone)?'':`<button class="btn-swap" onclick="openSwap('${ex.id}','${ex.muscle}')">${t('workout_swap')}</button>`;
+  const removeBtn=isLogEx?`<button class="btn-swap" onclick="removeLogExercise('${ex.id}')">✕</button>`:'';
   const doneIcon=exDone?'<span style="color:#d4a846">✓ </span>':'';
-  const cueText=esc(ex.libId?t('cue_'+ex.libId):ex.cues);
+  const cueText=ex.libId?esc(t('cue_'+ex.libId)):'';
   const ytUrl=ex.libId&&YOUTUBE[ex.libId];
   const ytBtn=ytUrl?`<a class="yt-btn" href="${ytUrl}" target="_blank" rel="noopener noreferrer" aria-label="${esc(t('yt_aria'))}">${icon('play',10)}</a>`:'';
   const repDisplay=ex.wupTargetReps?(deload?`${ex.wupTargetReps} 📉`:`${ex.wupTargetReps}`):`${ex.repRange[0]}–${ex.repRange[1]}`;
-  const weightSuggest=deload?` <span style="color:#e8c55a;font-weight:700">📉 ${Math.round(lastW*0.6*2)/2}kg</span>`:
-    (bump?` <span style="color:#d4a846;font-weight:700">${t('workout_try')} ${Math.round(lastW*1.025*2)/2}kg</span>`:'');
+  const weightSuggest=isLogEx?'':(deload?` <span style="color:#e8c55a;font-weight:700">📉 ${Math.round(lastW*0.6*2)/2}kg</span>`:
+    (bump?` <span style="color:#d4a846;font-weight:700">${t('workout_try')} ${Math.round(lastW*1.025*2)/2}kg</span>`:''));
   const lastInfo=lastW>0
     ?`<div class="last-info">${t('workout_last')} <span style="color:#f2f0ea;font-weight:600">${lastW}kg × ~${lastR} ${t('workout_reps')}</span>${weightSuggest}</div>`
     :'';
@@ -835,21 +927,26 @@ function buildExerciseCard(ex,ei){
   sets.forEach((set,si)=>{
     setsHTML+=`<div id="set-row-${ex.id}-${si}" class="set-grid">${buildSetRowHTML(ex,si,set,lastSetReps[si]||0)}</div>`;
   });
+  const addSetBtn=isLogEx?`<div style="display:flex;gap:8px;margin-top:8px">
+    <button class="btn-ghost" style="flex:1;padding:8px" onclick="addLogSet('${ex.id}')">${t('log_add_set')}</button>
+    ${sets.length>1?`<button class="btn-ghost" style="flex:1;padding:8px" onclick="removeLogSet('${ex.id}')">${t('log_remove_set')}</button>`:''}
+  </div>`:'';
 
   return`
   <div class="card ex-card" style="animation-delay:${ei*0.04}s;opacity:${exDone?0.45:1}" id="ex-card-${ex.id}">
     <div class="ex-header">
       <div class="ex-title-area">
-        <div class="ex-title">${doneIcon}${esc(t(ex.libId||ex.name))}${ytBtn}<span class="mtag">${esc(t('muscle_'+ex.muscle))}</span></div>
+        <div class="ex-title">${doneIcon}${esc(ex.libId?t(ex.libId):ex.name)}${ytBtn}<span class="mtag">${esc(t('muscle_'+ex.muscle))}</span></div>
         <div class="ex-meta">${ex.sets} ${t('workout_sets')} · ${repDisplay} ${t('workout_reps')}</div>
       </div>
-      <div class="ex-actions">${bumpBadge}${swapBtn}</div>
+      <div class="ex-actions">${bumpBadge}${swapBtn}${removeBtn}</div>
     </div>
-    <div class="cue-box">💡 ${cueText}</div>
+    ${cueText?`<div class="cue-box">💡 ${cueText}</div>`:''}
     ${lastInfo}
     <div class="set-col-hdr"><span>${t('workout_col_set')}</span><span>${t('workout_col_reps')}</span><span>${t('workout_col_kg')}</span><span></span></div>
     <div class="hint-text">${t('workout_hint_edit')}</div>
     ${setsHTML}
+    ${addSetBtn}
   </div>`;
 }
 
@@ -987,7 +1084,41 @@ function closePlateCalc(){
 // ═══════════════════════════════════════════════════════════════════
 // VIEWS
 // ═══════════════════════════════════════════════════════════════════
+function viewHomeLog(){
+  const totalS=A.history.length;
+  const weekS=A.history.filter(h=>isThisISOWeek(h.date)).length;
+  const streak=getWeekStreak();
+  const recent=[...A.history].slice(-3).reverse();
+  const recentHTML=recent.length?`
+    <div class="sec-title" style="margin-top:20px">${t('log_recent')}</div>
+    ${recent.map(s=>`<div class="card" style="cursor:pointer" onclick="navigate('history')">
+      <div class="row">
+        <div style="font-weight:700;font-size:14px">${esc(dayLabelText(s.dayLabel))}</div>
+        <div style="font-size:11px;color:#d4a846;font-weight:700">${fmtDate(s.date)}</div>
+      </div>
+      <div style="font-size:12px;color:#9090b0;margin-top:4px">${s.duration} ${t('complete_min')} · ${(s.exercises||[]).length} ${t('history_ex')}</div>
+    </div>`).join('')}`:'';
+  return`
+  <div class="hdr">
+    <div><div class="logo">RAUTALOKI</div><div class="hdr-sub">${today()}</div></div>
+  </div>
+  <div class="page">
+    <div class="h1">${t('home_ready')}</div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-val">${totalS}</div><div class="stat-lbl">${t('stat_sessions')}</div></div>
+      <div class="stat-box"><div class="stat-val">${weekS}</div><div class="stat-lbl">${t('stat_this_week')}</div></div>
+      <div class="stat-box"><div class="stat-val">${streak}</div><div class="stat-lbl">${t('streak_label')}</div></div>
+    </div>
+    <div class="acard">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;margin-bottom:14px">✏️ ${t('ob_mode_log')}</div>
+      <button class="btn-primary" onclick="startLogWorkout()">${t('home_start')}</button>
+    </div>
+    ${recentHTML}
+  </div>
+  ${navHTML("home")}`;
+}
 function viewHome(){
+  if(getMode()==='log')return viewHomeLog();
   const block=BLOCKS[A.blockIdx]||BLOCKS[0];
   if(!block)return`<div class="page"><div class="h1">No program</div><button class="btn-primary" onclick="navigate('onboarding')">${t('home_start')}</button></div>`;
   const nextB=BLOCKS[(A.blockIdx+1)%BLOCKS.length];
@@ -1069,18 +1200,32 @@ function viewHome(){
   ${navHTML("home")}`;
 }
 
+function logExerciseInputHTML(){
+  const ownNames=getLoggedExerciseNames();
+  const currentNames=A.sessionExercises.map(e=>e.name).filter(Boolean);
+  const options=matchExerciseNames(ownNames,'',currentNames).map(n=>`<option value="${esc(n)}">`).join('');
+  return`<div class="card" style="margin-bottom:12px">
+    <div style="display:flex;gap:8px">
+      <input id="log-ex-inp" type="text" list="log-ex-names" placeholder="${esc(t('log_ex_placeholder'))}"
+        style="flex:1;box-sizing:border-box;background:#1c1c2e;color:#f2f0ea;border:1px solid #333;border-radius:8px;padding:10px;font-size:14px;font-family:inherit"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();addLogExercise();}">
+      <button class="btn-primary" style="width:auto;padding:10px 16px" onclick="addLogExercise()">${t('log_add_exercise')}</button>
+    </div>
+    <datalist id="log-ex-names">${options}</datalist>
+  </div>`;
+}
 function viewWorkout(){
   const exercisesHTML=A.sessionExercises.map((ex,ei)=>buildExerciseCard(ex,ei)).join('');
   const done=doneSets(),total=totalSets();
   const pct=total?Math.round(done/total*100):0;
   const isDone=allDone();
   const someStarted=done>0&&!isDone;
-  const deloadBanner=isDeloadWeek()?`<div style="background:#1a1810;border:1px solid #e8c55a44;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#e8c55a">📉 <strong>${t('wup_deload_week')}</strong> — ${t('wup_deload_desc')}</div>`:'';
+  const deloadBanner=(!A.isLogWorkout&&isDeloadWeek())?`<div style="background:#1a1810;border:1px solid #e8c55a44;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#e8c55a">📉 <strong>${t('wup_deload_week')}</strong> — ${t('wup_deload_desc')}</div>`:'';
   return`
   <div id="workout-hdr" class="hdr" style="padding-top:48px">
     <div>
       <div class="logo">RAUTALOKI</div>
-      <div id="elapsed-txt" class="hdr-sub">${t('block_label')} ${(BLOCKS[A.blockIdx]||{id:'?'}).id} · ${t('home_day')} ${A.activeDayId} · ${fmtTime(A.elapsed)}</div>
+      <div id="elapsed-txt" class="hdr-sub">${elapsedLabel()}</div>
     </div>
     <div style="display:flex;gap:8px">
       <button style="background:none;border:1px solid #1c1c2e;color:#9090b0;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center" aria-label="${esc(t('plate_title'))}" onclick="openPlateCalc()">${icon('dumbbell',20)}</button>
@@ -1090,6 +1235,7 @@ function viewWorkout(){
   <div class="page">
     <div class="progress-track"><div id="progress-fill" class="progress-fill" style="width:${pct}%"></div></div>
     ${deloadBanner}
+    ${A.isLogWorkout?logExerciseInputHTML():''}
     ${exercisesHTML}
     <div style="height:12px"></div>
     <button id="finish-btn" class="btn-primary" onclick="finishWorkout()" ${isDone?'':'disabled'}>
@@ -1119,7 +1265,7 @@ function viewComplete(){
   const prCard=(A.newPRs&&A.newPRs.length)?`
     <div class="acard pop-in" style="margin-bottom:16px">
       <div style="font-size:12px;font-weight:700;color:#d4a846;margin-bottom:6px;text-transform:uppercase;letter-spacing:.1em">🎉 ${t('pr_new')}</div>
-      ${A.newPRs.map(p=>`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="font-size:14px">${esc(t(p.libId))}</span><span style="font-size:14px;font-weight:700;color:#d4a846">${p.prev}kg → ${p.weight}kg</span></div>`).join('')}
+      ${A.newPRs.map(p=>`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="font-size:14px">${esc(p.libId?t(p.libId):p.name||p.key)}</span><span style="font-size:14px;font-weight:700;color:#d4a846">${p.prev}kg → ${p.weight}kg</span></div>`).join('')}
     </div>`:'';
   const dayLabel=dayLabelText(s.dayLabel);
   return`
@@ -1136,11 +1282,11 @@ function viewComplete(){
     </div>
     ${swapNote}
     ${prCard}
-    <div class="card" style="margin-bottom:16px">
+    ${nd?`<div class="card" style="margin-bottom:16px">
       <div style="font-size:12px;color:#9090b0;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;font-weight:700">${t('complete_up_next')}</div>
-      <div style="font-weight:700;font-size:16px">${nd?nd.emoji+' '+esc(t('day_'+nd.label)||nd.label):''}</div>
-      <div style="font-size:13px;color:#9090b0;margin-top:2px">${nd?esc(t('focus_'+nd.focus)||nd.focus):''}</div>
-    </div>
+      <div style="font-weight:700;font-size:16px">${nd.emoji} ${esc(t('day_'+nd.label)||nd.label)}</div>
+      <div style="font-size:13px;color:#9090b0;margin-top:2px">${esc(t('focus_'+nd.focus)||nd.focus)}</div>
+    </div>`:''}
     <div class="card" style="margin-bottom:16px">
       <div style="font-size:12px;color:#9090b0;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;font-weight:700">${t('notes_label')}</div>
       <textarea placeholder="${t('notes_placeholder')}" rows="3" oninput="A.currentNotes=this.value" style="width:100%;box-sizing:border-box;background:#1c1c2e;color:#f2f0ea;border:1px solid #d4a84660;border-radius:8px;padding:10px;font-size:14px;font-family:inherit;resize:none;outline:none">${esc(A.currentNotes||'')}</textarea>
@@ -1205,7 +1351,7 @@ function buildHeatmapHTML(){
   if(sel){
     const[y,mo,da]=A._hmSel.split('-').map(Number);
     const ds=new Date(y,mo,da).toLocaleDateString(getLang()==='fi'?'fi-FI':'en-GB',{weekday:'short',day:'numeric',month:'short'});
-    const rows=sel.map(s=>`<div>${esc(dayLabelText(s.dayLabel))}${s.blockLabel?` · ${t('block_label')} ${s.blockId||''}`:''}</div>`).join('');
+    const rows=sel.map(s=>`<div>${esc(dayLabelText(s.dayLabel))}${(s.blockLabel&&s.blockId!=='free'&&s.blockId!=='log')?` · ${t('block_label')} ${s.blockId}`:''}</div>`).join('');
     tip=`<div class="hm-tip" id="hm-tip"><div class="hm-tip-date">${ds}</div>${rows}</div>`;
   }
   return`<div class="hm-wrap">
@@ -1312,7 +1458,7 @@ function viewHistory(){
     const muscleRows=muscleKeys.map(m=>{
       const rows=grouped[m].map(pr=>`
         <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid #1c1c2e">
-          <div style="font-size:13px;color:#9090b0">${pr.libId?t(pr.libId):esc(pr.libId)}</div>
+          <div style="font-size:13px;color:#9090b0">${esc(pr.libId?t(pr.libId):pr.name||pr.key)}</div>
           <div style="text-align:right">
             <div style="font-size:14px;font-weight:700;color:#f2f0ea">${pr.weight}kg <span style="font-size:11px;color:#9090b0">× ${pr.reps}</span></div>
             <div style="font-size:10px;color:#9090b0">${t('pr_est_1rm')} <span style="color:#d4a846;font-weight:700">${pr.est1rm}kg</span></div>
@@ -1355,7 +1501,7 @@ function viewHistory(){
           <div style="font-weight:700;font-size:14px">${esc(sessionDayLabel||'')}</div>
           <div style="display:flex;align-items:center;gap:8px">
             <div style="font-size:11px;color:#d4a846;font-weight:700">${ds}</div>
-            ${session.blockLabel?`<div style="font-size:10px;color:#9090b0">${t('block_label')} ${session.blockId||''}</div>`:''}
+            ${(session.blockLabel&&session.blockId!=='free'&&session.blockId!=='log')?`<div style="font-size:10px;color:#9090b0">${t('block_label')} ${session.blockId}</div>`:''}
             <div style="font-size:12px;color:#9090b0;transition:transform .2s;transform:rotate(${open?'180':'0'}deg)">▼</div>
           </div>
         </div>
@@ -1461,6 +1607,23 @@ function viewProgram(){
 }
 
 function viewOnboarding(){
+  if(!_obState.mode){
+    return`
+    <div class="ob-page">
+      <div class="ob-title">RAUTALOKI</div>
+      <div style="font-size:14px;color:#9090b0;margin-bottom:8px">${t('ob_tagline')}</div>
+      <div class="ob-sub">${t('ob_mode_title')}</div>
+      <div class="card" style="cursor:pointer;text-align:left;margin-bottom:12px" onclick="obSelectMode('program')">
+        <div style="font-weight:700;font-size:16px">📋 ${t('ob_mode_program')}</div>
+        <div style="font-size:13px;color:#9090b0;margin-top:4px">${t('ob_mode_program_desc')}</div>
+      </div>
+      <div class="card" style="cursor:pointer;text-align:left" onclick="obSelectMode('log')">
+        <div style="font-weight:700;font-size:16px">✏️ ${t('ob_mode_log')}</div>
+        <div style="font-size:13px;color:#9090b0;margin-top:4px">${t('ob_mode_log_desc')}</div>
+      </div>
+      <div style="font-size:11px;color:#9090b0;margin-top:12px">${t('ob_change_later')}</div>
+    </div>`;
+  }
   return`
   <div class="ob-page">
     <div class="ob-title">RAUTALOKI</div>
@@ -1501,7 +1664,17 @@ function viewOnboarding(){
   </div>`;
 }
 
-const _obState={freq:null,sex:null,goal:null};
+const _obState={mode:null,freq:null,sex:null,goal:null};
+function obSelectMode(mode){
+  if(mode==='log'){
+    saveProfile({...(getProfile()||{}),mode:'log'});
+    _obState.mode=null;
+    navigate('home');
+    return;
+  }
+  _obState.mode='program';
+  render();
+}
 function obSelect(key,val){
   _obState[key]=val;
   // Update UI
@@ -1518,7 +1691,8 @@ function obSelect(key,val){
 }
 function obFinish(){
   if(!_obState.freq||!_obState.sex||!_obState.goal)return;
-  saveProfile({freq:_obState.freq,sex:_obState.sex});
+  saveProfile({freq:_obState.freq,sex:_obState.sex,mode:'program'});
+  _obState.mode=null;
   setWupGoal(_obState.goal);
   reloadBlocks();
   ls.set(SK.blockIdx,0);
@@ -1526,6 +1700,22 @@ function obFinish(){
   A.previewBlockIdx=0;
   A.activeDayId=getNextDayId();
   navigate("home");
+}
+// Switch profile mode without touching program/history data (settings).
+function switchToLogMode(){
+  saveProfile({...(getProfile()||{}),mode:'log'});
+  navigate('home');
+}
+function switchToProgramMode(){
+  const p=getProfile()||{};
+  if(p.freq&&p.sex){
+    saveProfile({...p,mode:'program'});
+    if(!BLOCKS.length)reloadBlocks();
+    navigate('home');
+  }else{
+    _obState.mode='program';
+    navigate('onboarding');
+  }
 }
 function resetProfile(){
   if(!confirm(t('confirm_reset_profile')))return;
@@ -1557,6 +1747,11 @@ function viewSettings(){
     <button class="ob-opt${lang==='en'?' selected':''}" style="min-width:80px;flex:0 0 auto;padding:10px 6px" onclick="setLang('en')">English</button>
     <button class="ob-opt${lang==='fi'?' selected':''}" style="min-width:80px;flex:0 0 auto;padding:10px 6px" onclick="setLang('fi')">Suomi</button>`;
 
+  const mode=getMode();
+  const modeBtns=`
+    <button class="ob-opt${mode==='program'?' selected':''}" style="min-width:120px;flex:0 0 auto;padding:10px 6px" onclick="switchToProgramMode()">📋 ${t('ob_mode_program')}</button>
+    <button class="ob-opt${mode==='log'?' selected':''}" style="min-width:120px;flex:0 0 auto;padding:10px 6px" onclick="switchToLogMode()">✏️ ${t('ob_mode_log')}</button>`;
+
   const howToUse=`
     <div class="card" style="margin-top:16px">
       <div style="font-weight:700;font-size:15px;margin-bottom:10px">${t('settings_how_to')}</div>
@@ -1581,6 +1776,11 @@ function viewSettings(){
       <div style="display:flex;gap:6px;flex-wrap:wrap">${langBtns}</div>
     </div>
 
+    <div class="sec-title" style="margin-top:20px">${t('settings_mode')}</div>
+    <div class="card">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${modeBtns}</div>
+    </div>
+
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px">
       <div class="sec-title" style="margin:0">${t('settings_rest')}</div>
       <label class="toggle"><input type="checkbox" ${restEnabled?'checked':''} onchange="toggleRestTimer(this.checked)"><span class="slider"></span></label>
@@ -1590,14 +1790,14 @@ function viewSettings(){
       <div style="display:flex;gap:6px;flex-wrap:wrap">${restBtns}</div>
     </div>
 
-    <div class="sec-title" style="margin-top:20px">${t('settings_setup')}</div>
+    ${mode==='program'?`<div class="sec-title" style="margin-top:20px">${t('settings_setup')}</div>
     <div class="card" style="display:flex;justify-content:space-between;align-items:center">
       <div>
         <div style="font-size:14px;font-weight:700">${profile?profile.freq:'3'}× ${t('settings_per_week')} · ${profile&&profile.sex==='female'?t('settings_female'):t('settings_male')}</div>
         <div style="font-size:12px;color:#9090b0;margin-top:2px">${profile&&profile.freq<=3?t('settings_full_body'):t('settings_split')} ${t('settings_program')}</div>
       </div>
       <button class="btn-tiny" style="color:#d4a846;border-color:#d4a846" onclick="resetProfile()">${t('settings_change')}</button>
-    </div>
+    </div>`:''}
 
     <div class="sec-title" style="margin-top:20px">${t('settings_progression_title')}</div>
     <div class="card">
@@ -1782,7 +1982,7 @@ function navHTML(active){
     {id:"history",icon:"list",labelKey:"nav_log"},
     {id:"program",icon:"calendar",labelKey:"nav_program"},
     {id:"settings",icon:"sliders",labelKey:"nav_settings"},
-  ];
+  ].filter(it=>it.id!=='program'||getMode()!=='log');
   return`<nav class="nav">${items.map(it=>`
     <button class="nav-btn${active===it.id?' active':''}" onclick="navigate('${it.id}')">
       ${icon(it.icon,20)}<span>${t(it.labelKey)}</span>
@@ -1816,6 +2016,7 @@ function cancelWorkout(){
     A.restTimer=null;
     A.sessionStart=null;
     A.isFreeWorkout=false;
+    A.isLogWorkout=false;
     navigate("home");
   }
 }
@@ -1863,13 +2064,14 @@ function confirmQuit(){
   closeQuit();
   // Save partial session
   const isFree=A.isFreeWorkout;
-  const block=BLOCKS[A.blockIdx];
-  const day=isFree?null:block.days.find(d=>d.id===A.activeDayId);
+  const isLog=A.isLogWorkout;
+  const block=(!isFree&&!isLog)?BLOCKS[A.blockIdx]:null;
+  const day=block?block.days.find(d=>d.id===A.activeDayId):null;
   const session={
     id:Date.now(),
     date:new Date().toISOString(),
-    blockId:isFree?"free":block.id,blockLabel:isFree?"Free":block.label,
-    dayId:isFree?"free":A.activeDayId,dayLabel:isFree?t('free_workout_label'):day?day.label:'',
+    blockId:isFree?"free":isLog?"log":block.id,blockLabel:isFree?"Free":isLog?"Log":block.label,
+    dayId:isFree?"free":isLog?"log":A.activeDayId,dayLabel:isFree?t('free_workout_label'):isLog?t('log_workout_label'):day?day.label:'',
     duration:Math.round((Date.now()-A.sessionStart)/60000),
     partial:true,
     exercises:A.sessionExercises.map(ex=>({
@@ -1888,6 +2090,7 @@ function confirmQuit(){
   A.restTimer=null;
   A.sessionStart=null;
   A.isFreeWorkout=false;
+  A.isLogWorkout=false;
   navigate("home");
 }
 

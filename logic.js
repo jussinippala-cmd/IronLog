@@ -47,6 +47,27 @@ function tipLeft(center,tipW,containerW,pad=4){
   return Math.max(pad,Math.min(center-tipW/2,containerW-tipW-pad));
 }
 
+// Autocomplete for log-mode exercise entry: the user's own past exercise
+// names matching the query (case-insensitive substring), minus exclusions.
+function matchExerciseNames(names,query,exclude=[]){
+  const q=String(query||'').toLowerCase();
+  const ex=new Set(exclude.map(n=>n.toLowerCase()));
+  return names.filter(n=>!ex.has(n.toLowerCase())&&n.toLowerCase().includes(q));
+}
+
+// Grouping key for charts/PRs: library id when present, typed name otherwise.
+function exerciseKey(ex){return ex.libId||ex.name||'';}
+
+// Next value when tapping the rep-cycle button: counts down from hi, dips
+// up to 2 reps below lo to show a "missed by N" state, then wraps to hi.
+// Never surfaces reps below 1 — programmed ranges never have lo<3 so this
+// never bit before, but log-mode's wide-open range can start at lo=1.
+function nextCycleReps(current,lo,hi){
+  const floor=Math.max(lo-2,1);
+  if(current===null||Number.isNaN(current)||current<=floor)return hi;
+  return current-1;
+}
+
 // Epley estimate
 function est1RM(weight,reps){return Math.round(weight*(1+reps/30));}
 
@@ -64,5 +85,5 @@ function plateBreakdown(total,barWeight,plateSizes){
 }
 
 if(typeof module!=='undefined'&&module.exports){
-  module.exports={roundToHalf,computeStartWeight,getWeekReps,est1RM,plateBreakdown,shouldRestAlert,isoWeekNumber,tipLeft};
+  module.exports={roundToHalf,computeStartWeight,getWeekReps,est1RM,plateBreakdown,shouldRestAlert,isoWeekNumber,tipLeft,matchExerciseNames,exerciseKey,nextCycleReps};
 }
