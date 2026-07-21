@@ -507,6 +507,8 @@ function startWorkout(dayId,block){
   A.sessionStart=Date.now();
   A.elapsed=0;
   A.restTimer=null;
+  A.isFreeWorkout=false;
+  A.isLogWorkout=false;
   clearInterval(A._restInterval);A._restEndTime=null;
   startElapsed();
   requestWakeLock();
@@ -539,6 +541,7 @@ function startFreeWorkout(exerciseIds){
   A.elapsed=0;
   A.restTimer=null;
   A.isFreeWorkout=true;
+  A.isLogWorkout=false;
   A.freeExerciseIds=[];
   clearInterval(A._restInterval);A._restEndTime=null;
   startElapsed();
@@ -809,6 +812,8 @@ function updateFinishBtn(){
 // HTML BUILDERS
 // ═══════════════════════════════════════════════════════════════════
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// Safe to drop inside onclick="fn('${escJsArg(s)}')" — escapes for the JS string literal first, then for the HTML attribute.
+function escJsArg(s){return esc(String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"));}
 
 // ── Inline SVG icons (stroke follows currentColor) ──
 const _ICONS={
@@ -1256,8 +1261,8 @@ function viewComplete(){
   if(!s)return viewHome();
   const vol=s.exercises.reduce((a,e)=>a+e.sets.reduce((b,st)=>b+(parseFloat(st.weight)||0)*(parseFloat(st.reps)||0),0),0);
   const curBlock=BLOCKS[A.blockIdx]||BLOCKS[0];
-  const nd=curBlock?curBlock.days.find(d=>d.id===getNextDayId()):null;
-  const blockSwapped=curBlock&&curBlock.id!==s.blockId&&s.blockId!=="free";
+  const nd=(curBlock&&s.blockId!=="log"&&s.blockId!=="free")?curBlock.days.find(d=>d.id===getNextDayId()):null;
+  const blockSwapped=curBlock&&curBlock.id!==s.blockId&&s.blockId!=="free"&&s.blockId!=="log";
   const swapNote=blockSwapped?`
     <div class="scard" style="margin-bottom:16px">
       <div style="font-size:12px;font-weight:700;color:#e8c55a;margin-bottom:4px;text-transform:uppercase;letter-spacing:.1em">🔄 ${t('complete_switch')}</div>
@@ -1410,7 +1415,7 @@ function viewHistory(){
   if(chartExList.length>0){
     if(!A.chartExercise||!chartExList.includes(A.chartExercise))A.chartExercise=chartExList[0];
     const pills=chartExList.map(lid=>
-      `<button class="chart-pill${A.chartExercise===lid?' active':''}" onclick="selectChartExercise('${lid}')">${t(lid)}</button>`
+      `<button class="chart-pill${A.chartExercise===lid?' active':''}" onclick="selectChartExercise('${escJsArg(lid)}')">${esc(t(lid))}</button>`
     ).join('');
     chartSection=`<div class="card" style="margin-bottom:16px">
       <div class="row" style="cursor:pointer;user-select:none" onclick="A.chartOpen=!A.chartOpen;render()">
@@ -1491,7 +1496,7 @@ function viewHistory(){
         const wts=(ex.sets||[]).map(st=>parseFloat(st.weight)||0).filter(w=>w>0);
         const maxW=wts.length?Math.max(...wts):0;
         if(maxW<=0)return;
-        const exName=ex.libId?t(ex.libId):esc(ex.name);
+        const exName=ex.libId?esc(t(ex.libId)):esc(ex.name);
         const exKey=`${si}_${ei}`;
         const exOpen=A._openHistEx.has(exKey);
         const setRows=(ex.sets||[]).map((st,sti)=>{
@@ -1644,6 +1649,7 @@ function viewOnboarding(){
   }
   return`
   <div class="ob-page">
+    <button style="background:none;border:none;color:#9090b0;font-size:22px;cursor:pointer;padding:0;margin-bottom:8px" onclick="obBack()">←</button>
     <div class="ob-title">RAUTALOKI</div>
     <div style="font-size:14px;color:#9090b0;margin-bottom:8px">${t('ob_tagline')}</div>
     <div class="ob-sub">${t('ob_subtitle')}</div>
@@ -1683,6 +1689,13 @@ function viewOnboarding(){
 }
 
 const _obState={mode:null,freq:null,sex:null,goal:null};
+function obBack(){
+  _obState.mode=null;
+  _obState.freq=null;
+  _obState.sex=null;
+  _obState.goal=null;
+  render();
+}
 function obSelectMode(mode){
   if(mode==='log'){
     saveProfile({...(getProfile()||{}),mode:'log'});
@@ -1780,7 +1793,8 @@ function viewSettings(){
         <strong style="color:#f2f0ea">${t('settings_how_4')}</strong> ${t('settings_how_4b')}<br><br>
         <strong style="color:#f2f0ea">${t('settings_how_5')}</strong> ${t('settings_how_5b')}<br><br>
         <strong style="color:#f2f0ea">${t('settings_how_6')}</strong> ${t('settings_how_6b')}<br><br>
-        <strong style="color:#f2f0ea">${t('settings_how_7')}</strong> ${t('settings_how_7b')}
+        <strong style="color:#f2f0ea">${t('settings_how_7')}</strong> ${t('settings_how_7b')}<br><br>
+        <strong style="color:#f2f0ea"><span style="display:inline-flex;vertical-align:-2px">${icon('dumbbell',13)}</span> ${t('settings_how_8')}</strong> ${t('settings_how_8b')}
       </div>
     </div>`;
 

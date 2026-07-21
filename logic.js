@@ -71,8 +71,10 @@ function nextCycleReps(current,lo,hi){
 // Which item of a rotating list to show today — stable all day, changes
 // tomorrow. Day-of-year mod list length, so it cycles predictably.
 function dailyPhraseIndex(date,count){
-  const start=new Date(date.getFullYear(),0,0);
-  const dayOfYear=Math.floor((date-start)/86400000);
+  const d=new Date(date);
+  d.setHours(0,0,0,0);
+  const start=new Date(d.getFullYear(),0,0);
+  const dayOfYear=Math.round((d-start)/86400000);
   return dayOfYear%count;
 }
 
