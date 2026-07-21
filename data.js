@@ -187,7 +187,7 @@ muscle_Chest:"Chest",muscle_Back:"Back",muscle_Shoulders:"Shoulders",muscle_Bice
 // Navigation
 nav_home:"Home",nav_log:"Log",nav_program:"Program",nav_settings:"Settings",
 // Home view
-home_ready:"Ready to<br>build?",home_days_week:"days/week.",home_full_body:"Full body.",home_split:"Split training.",
+home_days_week:"days/week.",home_full_body:"Full body.",home_split:"Split training.",
 home_blocks_variation:"blocks of variation.",stat_sessions:"Sessions",stat_this_week:"This week",stat_to_swap:"To swap",
 home_up_next:"UP NEXT",home_day:"DAY",home_start:"START WORKOUT →",
 home_block_swap_in:"BLOCK SWAP IN",home_session:"SESSION",home_sessions:"SESSIONS",
@@ -447,7 +447,7 @@ muscle_Chest:"Rinta",muscle_Back:"Selkä",muscle_Shoulders:"Olkapäät",muscle_B
 // Navigation
 nav_home:"Koti",nav_log:"Loki",nav_program:"Ohjelma",nav_settings:"Asetukset",
 // Home view
-home_ready:"Valmis<br>treeniin?",home_days_week:"päivää/viikko.",home_full_body:"Koko keho.",home_split:"Jaettu ohjelma.",
+home_days_week:"päivää/viikko.",home_full_body:"Koko keho.",home_split:"Jaettu ohjelma.",
 home_blocks_variation:"vaihtelublokkia.",stat_sessions:"Treenit",stat_this_week:"Tällä viikolla",stat_to_swap:"Vaihtoon",
 home_up_next:"SEURAAVA",home_day:"PÄIVÄ",home_start:"ALOITA TREENI →",
 home_block_swap_in:"BLOKKI VAIHTUU",home_session:"TREENIN",home_sessions:"TREENIN",

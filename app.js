@@ -1104,7 +1104,7 @@ function viewHomeLog(){
     <div><div class="logo">RAUTALOKI</div><div class="hdr-sub">${today()}</div></div>
   </div>
   <div class="page">
-    <div class="h1">${t('home_ready')}</div>
+    <div class="h1">${esc(homeGreeting())}</div>
     <div class="stats-row">
       <div class="stat-box"><div class="stat-val">${totalS}</div><div class="stat-lbl">${t('stat_sessions')}</div></div>
       <div class="stat-box"><div class="stat-val">${weekS}</div><div class="stat-lbl">${t('stat_this_week')}</div></div>
@@ -1163,7 +1163,7 @@ function viewHome(){
     </div>
   </div>
   <div class="page">
-    <div class="h1">${t('home_ready')}</div>
+    <div class="h1">${esc(homeGreeting())}</div>
     <div class="sub">${freq} ${t('home_days_week')} ${freq<=3?t('home_full_body'):t('home_split')} ${BLOCKS.length} ${t('home_blocks_variation')}</div>
     <div class="stats-row">
       <div class="stat-box"><div class="stat-val">${totalS}</div><div class="stat-lbl">${t('stat_sessions')}</div></div>
@@ -2040,6 +2040,45 @@ function cancelWorkout(){
   }
 }
 
+// Home-screen greeting: rotates daily (same phrase all day, see
+// dailyPhraseIndex in logic.js) so the app feels a little different
+// each time without being distracting mid-session.
+const HOME_PHRASES={
+  en:[
+    "Ready to train?","Time to sweat?","The iron is waiting.","Show what you've got.",
+    "Time to grow stronger.","New PR today?","Your muscles need work.","No excuses today.",
+    "You vs. yesterday's you.","Give it everything.","The gym is calling.","Every set moves you forward.",
+    "Let's train smart.","Ready to lift?","Today's your day.","Victory starts here.",
+    "Let's go hard.","Beat yesterday's effort.","Sweat doesn't lie.","Hard work pays off.",
+    "Beat the fatigue.","Time to crush goals.","Your body will thank you.","No shortcuts to strong.",
+    "Strength only comes from work.","Beat yourself today.","Invest in yourself.","Take on the challenge.",
+    "Your fitness grows here.","Work today for tomorrow.","Iron doesn't lie.","Earn your next rest.",
+    "Go get that PR.","Challenge yourself.","One set at a time.","Give it your all.",
+    "Build a stronger you.","Focus up, let's go.","Hard training, hard results.","A step toward your goal.",
+    "Let's put in the work.","Time to show character.","No complaints, just results.","Training starts with attitude.",
+    "Push through.","Let's go hard today.","Is today the day?","Training is an investment in you.",
+    "Do it for yourself.","Time to earn the sweat.",
+  ],
+  fi:[
+    "Valmis treeniin?","Aika hikoilla?","Rauta odottaa.","Näytä mihin pystyt.",
+    "Aika kasvaa vahvemmaksi.","Uusi ennätys tänään?","Lihakset kaipaavat töitä.","Ei tekosyitä tänään.",
+    "Sinä vs. eilinen sinä.","Anna kaikkesi.","Kuntosali kutsuu.","Jokainen sarja vie eteenpäin.",
+    "Treenataan fiksusti.","Valmiina nostamaan?","Tänään on sun päivä.","Voitto alkaa täältä.",
+    "Mennään kovaa.","Ylitä eilinen suoritus.","Hikipisarat kertovat totuuden.","Kova työ kannattaa.",
+    "Voita väsymys.","Aika murskata tavoitteet.","Kroppa kiittää myöhemmin.","Ei oikoteitä huippukuntoon.",
+    "Voima kasvaa vain töillä.","Voita itsesi tänään.","Satsaa itseesi.","Ota haaste vastaan.",
+    "Kuntosi kasvaa täällä.","Tee töitä huomista varten.","Rauta ei valehtele.","Ansaitse seuraava lepo.",
+    "Hae se ennätys.","Haasta itsesi.","Yksi sarja kerrallaan.","Anna palaa.",
+    "Rakenna vahvempi versio itsestäsi.","Fokus päälle, mennään.","Kova treeni, kova tulos.","Askel kohti tavoitetta.",
+    "Tehdään lujaa työtä.","Aika näyttää luonnetta.","Ei valituksia, vain tuloksia.","Treeni alkaa asenteesta.",
+    "Paina päälle.","Mennään lujaa tänään.","Onko tänään se päivä?","Treeni on sijoitus itseesi.",
+    "Tee se itsesi vuoksi.","Aika ansaita hikeä.",
+  ]
+};
+function homeGreeting(){
+  const list=HOME_PHRASES[getLang()]||HOME_PHRASES.en;
+  return list[dailyPhraseIndex(new Date(),list.length)];
+}
 const _quitLines={
   en:[
     "Are you sure? The weights won't lift themselves.",

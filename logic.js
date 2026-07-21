@@ -68,6 +68,14 @@ function nextCycleReps(current,lo,hi){
   return current-1;
 }
 
+// Which item of a rotating list to show today — stable all day, changes
+// tomorrow. Day-of-year mod list length, so it cycles predictably.
+function dailyPhraseIndex(date,count){
+  const start=new Date(date.getFullYear(),0,0);
+  const dayOfYear=Math.floor((date-start)/86400000);
+  return dayOfYear%count;
+}
+
 // Epley estimate
 function est1RM(weight,reps){return Math.round(weight*(1+reps/30));}
 
@@ -85,5 +93,5 @@ function plateBreakdown(total,barWeight,plateSizes){
 }
 
 if(typeof module!=='undefined'&&module.exports){
-  module.exports={roundToHalf,computeStartWeight,getWeekReps,est1RM,plateBreakdown,shouldRestAlert,isoWeekNumber,tipLeft,matchExerciseNames,exerciseKey,nextCycleReps};
+  module.exports={roundToHalf,computeStartWeight,getWeekReps,est1RM,plateBreakdown,shouldRestAlert,isoWeekNumber,tipLeft,matchExerciseNames,exerciseKey,nextCycleReps,dailyPhraseIndex};
 }
