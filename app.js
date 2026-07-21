@@ -323,6 +323,7 @@ const A={
   newPRs:[],
   _askedNotif:false,
   _openSessions:new Set(),
+  _openHistEx:new Set(),
   // Internal timers
   _elapsedInterval:null,
   _restInterval:null,
@@ -1379,6 +1380,7 @@ function addBodyweight(){
 
 function selectChartExercise(libId){A.chartExercise=libId;render();}
 function toggleSession(i){if(A._openSessions.has(i))A._openSessions.delete(i);else A._openSessions.add(i);render();}
+function toggleHistEx(key){if(A._openHistEx.has(key))A._openHistEx.delete(key);else A._openHistEx.add(key);render();}
 function viewHistory(){
   const hist=[...A.history].reverse();
   const streak=getWeekStreak();
@@ -1485,13 +1487,29 @@ function viewHistory(){
       const vol=(session.exercises||[]).reduce((a,e)=>a+(e.sets||[]).reduce((b,st)=>b+(parseFloat(st.weight)||0)*(parseFloat(st.reps)||0),0),0);
       const ds=fmtDate(session.date);
       let exRows='';
-      (session.exercises||[]).forEach(ex=>{
+      (session.exercises||[]).forEach((ex,ei)=>{
         const wts=(ex.sets||[]).map(st=>parseFloat(st.weight)||0).filter(w=>w>0);
         const maxW=wts.length?Math.max(...wts):0;
+        if(maxW<=0)return;
         const exName=ex.libId?t(ex.libId):esc(ex.name);
-        if(maxW>0)exRows+=`<div style="display:flex;justify-content:space-between;padding-top:5px;border-top:1px solid #1c1c2e;margin-top:5px">
-          <div style="font-size:13px;color:#9090b0">${exName}</div>
-          <div style="font-size:13px;font-weight:700">${maxW}kg</div>
+        const exKey=`${si}_${ei}`;
+        const exOpen=A._openHistEx.has(exKey);
+        const setRows=(ex.sets||[]).map((st,sti)=>{
+          const r=st.reps!==undefined&&st.reps!==''?st.reps:'–';
+          const w=st.weight!==undefined&&st.weight!==''?`${st.weight}kg`:'–';
+          return`<div style="display:flex;justify-content:space-between;padding:4px 0 4px 12px;font-size:12px;color:#9090b0">
+            <span>${sti+1}.</span><span>${r} × ${w}</span>
+          </div>`;
+        }).join('');
+        exRows+=`<div style="border-top:1px solid #1c1c2e;margin-top:5px;padding-top:5px;cursor:pointer" onclick="event.stopPropagation();toggleHistEx('${exKey}')">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:13px;color:#9090b0">${exName}</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="font-size:13px;font-weight:700">${maxW}kg</div>
+              <div style="font-size:10px;color:#9090b0;transition:transform .2s;transform:rotate(${exOpen?'180':'0'}deg)">▼</div>
+            </div>
+          </div>
+          ${exOpen?setRows:''}
         </div>`;
       });
       const sessionDayLabel=dayLabelText(session.dayLabel);
@@ -1866,6 +1884,7 @@ function deleteSession(idx){
   A.history.splice(idx,1);
   ls.set(SK.history,A.history);
   A._openSessions.clear();
+  A._openHistEx.clear();
   render();
 }
 function exportCSV(){
